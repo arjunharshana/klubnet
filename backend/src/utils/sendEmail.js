@@ -1,31 +1,37 @@
-const SibApiV3Sdk = require("sib-api-v3-sdk");
-const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 require("dotenv").config();
 
-const apiKey = process.env.BREVO_API_KEY;
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
-if (!apiKey) {
-  throw new Error("BREVO_API_KEY is not defined in environment variables");
-}
-
-// New instance of the API client
-const client = SibApiV3Sdk.ApiClient.instance;
-const apiKeyAuth = client.authentications["api-key"];
-apiKeyAuth.apiKey = apiKey;
-
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+transporter
+  .verify()
+  .then(() => {
+    console.log("Email transporter is ready to send emails");
+  })
+  .catch((error) => {
+    console.error("Error setting up email transporter:", error);
+  });
 
 // Send verification email
 
 const sendVerificationEmail = async (userName, userEmail) => {
-  try {
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+  const mailOptions = {
+    from: {
+      name: "KlubNet Support",
+      address: process.env.EMAIL_USER,
+    },
+    to: userEmail,
 
-    sendSmtpEmail.subject = "Your KlubNet Verification OTP";
-
-    sendSmtpEmail.htmlContent = `
+    subject: "KlubNet Email Verification OTP",
+    html: `
         <html>
             <body>
                 <p>Hi ${userName},</p>
@@ -34,19 +40,11 @@ const sendVerificationEmail = async (userName, userEmail) => {
                 <p>Thank you for joining KlubNet!</p>
             </body>
         </html>
-        `;
+        `,
+  };
 
-    sendSmtpEmail.sender = {
-      name: "KlubNet Support",
-      email: "arjunharjun18@gmail.com",
-    };
-
-    sendSmtpEmail.to = [{ email: userEmail, name: userName }];
-
-    console.log("Sending verification email to:", userEmail);
-
-    await apiInstance.sendTransacEmail(sendSmtpEmail);
-
+  try {
+    await transporter.sendMail(mailOptions);
     console.log("Verification email sent successfully to:", userEmail);
     return otp;
   } catch (error) {
