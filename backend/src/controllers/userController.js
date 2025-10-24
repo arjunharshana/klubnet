@@ -109,4 +109,32 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, verifyOTP };
+const logoutUser = (req, res) => {
+  res.cookie("token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+  });
+  res.status(200).json({ message: "User logged out successfully" });
+};
+
+const getUserProfile = async (req, res) => {
+  const user = req.user;
+  if (user) {
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isVerified: user.isVerified,
+    });
+  } else {
+    res.status(404).json({ message: "User not found" });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  verifyOTP,
+  getUserProfile,
+  logoutUser,
+};
