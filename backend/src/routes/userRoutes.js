@@ -11,17 +11,23 @@ const {
 
 const { authMiddleware } = require("../middleware/authMiddleware");
 
+const {
+  rateLimiter,
+  authRateLimiter,
+  otpRateLimiter,
+} = require("../middleware/rateLimiter");
+
 const router = express.Router();
 
-router.post("/register", registerUser);
+router.post("/register", authRateLimiter, registerUser);
 
-router.post("/login", loginUser);
+router.post("/login", authRateLimiter, loginUser);
 
-router.post("/verify-otp", verifyOTP);
+router.post("/verify-otp", authRateLimiter, verifyOTP);
 
-router.post("/resend-otp", resendOTP);
+router.post("/resend-otp", otpRateLimiter, resendOTP);
 
-router.get("/profile", authMiddleware, getUserProfile);
-router.post("/logout", authMiddleware, logoutUser);
+router.get("/profile", authMiddleware, rateLimiter, getUserProfile);
+router.post("/logout", rateLimiter, logoutUser);
 
 module.exports = router;
