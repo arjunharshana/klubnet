@@ -53,4 +53,34 @@ const sendVerificationEmail = async (userName, userEmail) => {
   }
 };
 
-module.exports = { sendVerificationEmail };
+const sendPasswordResetEmail = async (userName, userEmail, resetToken) => {
+  const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+  const mailOptions = {
+    from: {
+      name: "KlubNet Support",
+      address: process.env.EMAIL_USER,
+    },
+    to: userEmail,
+    subject: "KlubNet Password Reset",
+    html: `
+        <html>
+            <body>
+                <p>Hi ${userName},</p>
+                <p>You requested to reset your password. Click the link below to reset it:</p>
+                <p><a href="${resetLink}">${resetLink}</a></p>
+            </body>
+        </html>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Password reset email sent successfully to:", userEmail);
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    throw error;
+  }
+};
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail };

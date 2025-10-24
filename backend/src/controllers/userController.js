@@ -1,6 +1,10 @@
 const User = require("../models/user");
 const { generateToken } = require("../utils/generateToken");
-const { sendVerificationEmail } = require("../utils/sendEmail");
+const {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+} = require("../utils/sendEmail");
+const crypto = require("crypto");
 
 // Register a new user
 const registerUser = async (req, res) => {
@@ -131,6 +135,7 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+// Resend OTP
 const resendOTP = async (req, res) => {
   const { email } = req.body;
 
@@ -159,6 +164,79 @@ const resendOTP = async (req, res) => {
   }
 };
 
+// Forgot Password
+
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const resetToken = user.createPasswordResetToken();
+    await user.save();
+
+    await sendPasswordResetEmail(user.name, email, resetToken);
+
+    res.status(200).json({
+      message: "Password reset email sent successfully",
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+    });
+  } catch (error) {
+    const userToClear = await User.findOne({ email });
+    if (userToClear) {
+      userToClear.passwordResetToken = undefined;
+      userToClear.passwordResetExpires = undefined;
+      await userToClear.save({ validateBeforeSave: false });
+    }
+    res.status(500).json({ message: "Server error" });
+    console.error(error);
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const token = req.query.token;
+  const { newPassword } = req.body;
+
+  try {
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetTokenExpiry: { $gt: Date.now() },
+    });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const isSamePassword = await user.matchPassword(newPassword);
+    if (isSamePassword) {
+      return res.status(400).json({
+        message: "New password must be different from the old password",
+      });
+    }
+
+    user.password = newPassword;
+
+    user.passwordResetToken = undefined;
+    user.passwordResetTokenExpiry = undefined;
+    await user.save();
+
+    generateToken(res, user._id);
+    res.status(200).json({
+      message: "Password reset successfully",
+      _id: user._id,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+    console.error(error);
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -166,4 +244,6 @@ module.exports = {
   getUserProfile,
   resendOTP,
   logoutUser,
+  forgotPassword,
+  resetPassword,
 };

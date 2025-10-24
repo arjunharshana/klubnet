@@ -87,9 +87,42 @@ const validateResendOTP = [
   handleValidationErrors,
 ];
 
+const validateEmail = [
+  body("email")
+    .trim()
+    .isEmail()
+    .withMessage("Invalid email address")
+    .normalizeEmail()
+    .matches(/\.(edu|ac\.in)$/)
+    .withMessage("Email must be from an educational domain"),
+
+  handleValidationErrors,
+];
+
+const validatePasswordReset = [
+  body("password")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).+$/)
+    .withMessage(
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+    ),
+
+  body("confirmPassword").custom((value, { req }) => {
+    if (value !== req.body.password) {
+      throw new Error("Passwords do not match");
+    }
+    return true;
+  }),
+
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
   validateOTP,
   validateResendOTP,
+  validateEmail,
+  validatePasswordReset,
 };
