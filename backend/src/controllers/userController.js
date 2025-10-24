@@ -131,10 +131,39 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+const resendOTP = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (user.isVerified) {
+      return res.status(400).json({ message: "User already verified" });
+    }
+    const otp = await sendVerificationEmail(user.name, email);
+    user.verificationOTP = otp;
+    user.verificationOTPExpiry = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+    res.status(200).json({
+      message: "OTP resent successfully",
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+    console.error(error);
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   verifyOTP,
   getUserProfile,
+  resendOTP,
   logoutUser,
 };
