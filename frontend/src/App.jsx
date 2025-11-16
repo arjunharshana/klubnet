@@ -1,23 +1,6 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
-
-function Home() {
-  return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold text-blue-600">Home Page</h1>
-      <p>Welcome to the Home Page!</p>
-
-      <nav className="mt-4 flex gap-4">
-        <Link to="/login" className="text-blue-500 hover:underline">
-          Go to Login
-        </Link>
-        <Link to="/register" className="text-blue-500 hover:underline">
-          Go to Register
-        </Link>
-      </nav>
-    </div>
-  );
-}
+import Home from "./pages/Home.jsx";
 
 function Login() {
   return (
