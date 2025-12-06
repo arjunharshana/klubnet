@@ -4,58 +4,106 @@
 
 @layer base {
   :root {
-    --text: 282, 100%, 5%;
-    --background: 284, 100%, 97%;
-    --primary: 281, 37%, 52%;
-    --primary-foreground: 0, 0%, 100%;
-    --secondary: 281 30% 75%;
-    --secondary-foreground: 282, 100%, 5%;
-    --accent: 274, 62%, 73%;
-    --accent-foreground: 282, 100%, 5%;
+    --primary: 284 84% 52%;
+    --primary-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --bg-light: 276 100% 99%;
 
-    --muted: 284 20% 90%;
-    --muted-foreground: 282 40% 40%;
+    --bg-dark: 278 33% 7%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 282 100% 5%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 282 100% 5%;
+    --fg-light: 282 17% 8%;
 
-    --border: 282 20% 85%;
-    --input: 282 20% 85%;
-    --ring: 281 37% 52%;
+    --fg-dark: 270 9% 97%;
+
+    --muted-light: 282 17% 46%;
+
+    --muted-dark: 278 9% 67%;
+
+    --card-light: 0 0% 100%;
+
+    --card-dark: 280 30% 12%;
+
+    --border-light: 278 18% 87%;
+
+    --border-dark: 277 22% 21%;
+
+    --background: var(--bg-light);
+    --foreground: var(--fg-light);
+    --card: var(--card-light);
+    --card-foreground: var(--fg-light);
+    --popover: var(--card-light);
+    --popover-foreground: var(--fg-light);
+    --muted: var(--muted-light);
+    --muted-foreground: var(--fg-light);
+    --border: var(--border-light);
+    --input: var(--border-light);
+    --ring: var(--primary);
 
     --radius: 0.5rem;
   }
 
   .dark {
-    --text: 0 0% 100%;
-    --background: 284 100% 3%;
-    --primary: 281 37% 48%;
-    --secondary: 281 30% 25%;
-    --accent: 274 62% 27%;
-
-    --primary-foreground: 0 0% 100%;
-    --secondary-foreground: 0 0% 100%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --muted: 284 30% 15%;
-    --muted-foreground: 284 10% 60%;
-
-    --card: 284 50% 6%;
-    --card-foreground: 0 0% 100%;
-
-    --popover: 284 50% 6%;
-    --popover-foreground: 0 0% 100%;
-
-    --border: 284 20% 20%;
-    --input: 284 20% 20%;
-    --ring: 281 37% 48%;
+    --background: var(--bg-dark);
+    --foreground: var(--fg-dark);
+    --card: var(--card-dark);
+    --card-foreground: var(--fg-dark);
+    --popover: var(--card-dark);
+    --popover-foreground: var(--fg-dark);
+    --muted: var(--muted-dark);
+    --muted-foreground: var(--fg-dark);
+    --border: var(--border-dark);
+    --input: var(--border-dark);
   }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.hero-gradient {
+  background-image: radial-gradient(
+    circle at 50% 100%,
+    #ab1ded33,
+    transparent 40%
+  );
+}
+
+/* Tailwind Dark Mode support */
+.dark .hero-gradient {
+  background-image: radial-gradient(
+    circle at 50% 100%,
+    #ab1ded44,
+    transparent 50%
+  );
+}
+
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.carousel-item {
+  scroll-snap-align: center;
+  flex: 0 0 352px;
+  opacity: 0.5;
+  transform: scale(0.95);
+  transition: all 0.3s ease-in-out;
+}
+
+.carousel-item:target {
+  opacity: 1;
+  transform: scale(1.05);
 }
