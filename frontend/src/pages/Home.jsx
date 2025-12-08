@@ -251,7 +251,7 @@ function Home() {
         </section>
 
         {/* Features Section */}
-        <section className="w-full bg-primary/5 py-16 md:py-24">
+        <section id="features" className="w-full bg-primary/5 py-16 md:py-24">
           <div className="container mx-auto max-w-7xl px-4">
             <div className="flex flex-col gap-12">
               <div className="flex flex-col gap-4 text-center">
