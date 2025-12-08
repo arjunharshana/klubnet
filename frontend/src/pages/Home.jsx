@@ -391,27 +391,10 @@ function Home() {
 
       {}
       <footer className="w-full border-t border-border bg-background py-8">
-        <div className="container mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 sm:flex-row">
+        <div className="container mx-auto flex max-w-7xl items-center justify-center px-4 ">
           <p className="text-sm text-text/60">
             © 2025 KlubNet. All rights reserved.
           </p>
-          <div className="flex items-center gap-6">
-            <a
-              className="text-sm text-text/60 transition-colors hover:text-primary"
-              href="#"
-            >
-              Privacy Policy
-            </a>
-            <a
-              className="text-sm text-text/60 transition-colors hover:text-primary"
-              href="#"
-            >
-              Terms of Service
-            </a>
-          </div>
-          <div className="flex items-center gap-4 text-text/60">
-            <span>Social Icons</span>
-          </div>
         </div>
       </footer>
     </div>
