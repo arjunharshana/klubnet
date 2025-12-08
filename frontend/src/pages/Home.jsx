@@ -342,14 +342,14 @@ function Home() {
                   ))}
                 </div>
               </div>
-              <div className="min-h-[400px] bg-text/5 relative">
+              <div className="bg-text/5 ">
                 {}
                 <div className="flex items-center justify-center">
-                  <div className="min-h-[400px] bg-primary/5 relative flex items-center justify-center p-8">
+                  <div className="min-h-[400px] bg-primary/5 relative flex items-center justify-center p-8 max-w-[600px] md:max-w-[500px] lg:max-w-[700px] mx-auto w-full">
                     <img
                       src="https://illustrations.popsy.co/purple/creative-work.svg"
                       alt="Students working together"
-                      className="w-full h-auto object-contain drop-shadow-xl"
+                      className="w-full max-w-[450px] md:max-w-[350px] h-auto object-contain drop-shadow-xl"
                     />
                   </div>
                 </div>
