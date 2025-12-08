@@ -77,7 +77,6 @@
   );
 }
 
-/* Tailwind Dark Mode support */
 .dark .hero-gradient {
   background-image: radial-gradient(
     circle at 50% 100%,

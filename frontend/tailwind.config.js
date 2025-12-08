@@ -5,7 +5,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // --- 1. Standard Semantic Colors (For Login/Register) ---
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -28,8 +27,6 @@ export default {
           foreground: "hsl(0 0% 100%)",
         },
 
-        // --- 2. Specific Design Colors (For Landing Page) ---
-        // These map to the specific variables we created so your copy-pasted code works
         "background-light": "hsl(var(--bg-light))",
         "background-dark": "hsl(var(--bg-dark))",
         "foreground-light": "hsl(var(--fg-light))",
