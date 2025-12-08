@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background text-text font-display selection:bg-primary/20">
-      {}
+      {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-20 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
@@ -22,7 +22,7 @@ function Home() {
               KlubNet
             </h2>
           </div>
-
+          {/*Navbar*/}
           <nav className="hidden items-center gap-1 rounded-full border border-border bg-card/50 p-1 md:flex">
             <a
               className="rounded-full px-4 py-2 text-sm font-medium text-text transition-colors hover:text-primary"
@@ -65,8 +65,8 @@ function Home() {
       </header>
 
       <main className="flex-1">
-        {}
-        <section className="relative w-full overflow-hidden pt-24 pb-32 md:pt-32 md:pb-40">
+        {/* Main section */}
+        <section className="relative w-full overflow-hidden pt-10 pb-32 md:pt-16 md:pb-40">
           {}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,hsl(var(--primary)/0.2),transparent_40%)]"></div>
 
@@ -94,7 +94,7 @@ function Home() {
                 </Link>
               </div>
 
-              {}
+              {/* Illustration */}
               <div className="relative mt-8 h-[450px] w-full items-center justify-center lg:h-[500px]">
                 <div className="absolute inset-x-0 top-1/2 h-full w-full -translate-y-1/2">
                   <div className="absolute top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl"></div>
@@ -191,7 +191,7 @@ function Home() {
           </div>
         </section>
 
-        {}
+        {/* How klubnet works section*/}
         <section className="w-full bg-background py-16 md:py-24">
           <div className="container mx-auto max-w-7xl px-4">
             <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
@@ -250,7 +250,7 @@ function Home() {
           </div>
         </section>
 
-        {}
+        {/* Features Section */}
         <section className="w-full bg-primary/5 py-16 md:py-24">
           <div className="container mx-auto max-w-7xl px-4">
             <div className="flex flex-col gap-12">
@@ -300,7 +300,7 @@ function Home() {
           </div>
         </section>
 
-        {}
+        {/* Your Campus Connected Section */}
         <section className="w-full py-16 md:py-24">
           <div className="container mx-auto max-w-7xl px-4">
             <div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-card shadow-2xl shadow-primary/5 lg:grid-cols-2">
@@ -358,8 +358,8 @@ function Home() {
           </div>
         </section>
 
-        {}
-        <section className="w-full py-16 md:py-24">
+        {/* Ready to Join Section */}
+        <section className="w-full py-8 md:py-12">
           <div className="container mx-auto max-w-7xl px-4">
             <div className="relative overflow-hidden rounded-xl bg-primary p-10 text-center text-primary-foreground md:p-20 shadow-2xl shadow-primary/20">
               <div className="absolute -top-1/2 -left-1/4 size-[500px] rounded-full bg-white/10"></div>
