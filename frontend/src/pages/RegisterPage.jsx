@@ -6,6 +6,8 @@ function RegisterPage() {
 
   const [step, setStep] = useState(1);
 
+  const [error, setError] = useState("");
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -21,13 +23,47 @@ function RegisterPage() {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  const handleNextStep = (e) => {
+  const handleNextStep = async (e) => {
     e.preventDefault();
+    setError("");
+
     if (step === 1) {
       // For otp
+      if (formData.password != formData.confirmPassword) {
+        setError("Passwords do not match!");
+        return;
+      }
+      if (formData.password.length < 8) {
+        setError("Password must be at least 8 characters.");
+        return;
+      }
+      try {
+        // backend api call for otp
+        console.log("OTP Sent");
+        setStep(2);
+      } catch (serverError) {
+        // Catch BACKEND validation (e.g., "Email already registered")
+        setError(serverError.response?.data?.message || "Something went wrong");
+      }
       setStep(2);
     } else if (step === 2) {
       //for profile
+      if (formData.otp.length !== 6) {
+        setError("OTP must be 6 digits.");
+        return;
+      }
+
+      try {
+        //backend validation
+        console.log("OTP Verified");
+        setStep(3);
+      } catch (serverError) {
+        setError(
+          serverError.response?.data?.message ||
+            "Invalid OTP. Please try again."
+        );
+      }
+
       setStep(3);
     } else if (step === 3) {
       // Final api call to register
@@ -181,6 +217,16 @@ function RegisterPage() {
             {/* Form Card */}
             <div className="w-full rounded-xl border border-border-light bg-card-light p-8 shadow-lg shadow-primary/5 dark:border-border-dark dark:bg-card-dark">
               <form onSubmit={handleNextStep} className="flex flex-col gap-6">
+                {/* error message */}
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-sm text-red-600 dark:text-red-400 flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                    <span className="material-symbols-outlined text-[18px]">
+                      error
+                    </span>
+                    {error}
+                  </div>
+                )}
+
                 {/* step 1, email & password */}
                 {step === 1 && (
                   <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 fade-in">
@@ -334,7 +380,7 @@ function RegisterPage() {
                         className="text-sm font-medium text-foreground-light dark:text-foreground-dark"
                         htmlFor="major"
                       >
-                        Major / Field of Study
+                        Major / Branch
                       </label>
                       <input
                         id="major"
