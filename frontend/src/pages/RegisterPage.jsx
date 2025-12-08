@@ -404,7 +404,7 @@ function RegisterPage() {
                         <input
                           id="firstName"
                           type="text"
-                          placeholder="Alex"
+                          placeholder="First Name"
                           value={formData.firstName}
                           onChange={handleChange}
                           required
@@ -421,7 +421,7 @@ function RegisterPage() {
                         <input
                           id="lastName"
                           type="text"
-                          placeholder="Doe"
+                          placeholder="Last Name"
                           value={formData.lastName}
                           onChange={handleChange}
                           required
