@@ -27,14 +27,34 @@ function RegisterPage() {
     e.preventDefault();
     setError("");
 
+    const trimmedEmail = formData.email.trim().toLowerCase();
+    const trimmedFirstName = formData.firstName.trim();
+    const trimmedLastName = formData.lastName.trim();
+
     if (step === 1) {
       // For otp
-      if (formData.password != formData.confirmPassword) {
-        setError("Passwords do not match!");
+      if (trimmedEmail.length > 50) {
+        setError("Email is too long (max 50 characters).");
         return;
       }
-      if (formData.password.length < 8) {
-        setError("Password must be at least 8 characters.");
+
+      const emailDomainRegex = /^[^\s@]+@[^\s@]+\.(edu|ac\.[a-z]{2,})$/i;
+      if (!emailDomainRegex.test(trimmedEmail)) {
+        setError("Please use a valid university email (.edu or .ac.xx).");
+        return;
+      }
+
+      const passwordComplexityRegex =
+        /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,128}$/;
+      if (!passwordComplexityRegex.test(formData.password)) {
+        setError(
+          "Password must be 8+ chars, include a number & special character (!@#$)."
+        );
+        return;
+      }
+
+      if (formData.password != formData.confirmPassword) {
+        setError("Passwords do not match!");
         return;
       }
       try {
@@ -48,8 +68,8 @@ function RegisterPage() {
       setStep(2);
     } else if (step === 2) {
       //for profile
-      if (formData.otp.length !== 6) {
-        setError("OTP must be 6 digits.");
+      if (!/^\d{6}$/.test(formData.otp)) {
+        setError("OTP must be exactly 6 digits.");
         return;
       }
 
@@ -66,8 +86,42 @@ function RegisterPage() {
 
       setStep(3);
     } else if (step === 3) {
-      // Final api call to register
-      console.log("Final Registration:", formData);
+      // name validation
+
+      const nameRegex = /^[a-zA-Z\s-]+$/;
+      if (
+        !nameRegex.test(trimmedFirstName) ||
+        !nameRegex.test(trimmedLastName)
+      ) {
+        setError("Names can only contain letters.");
+        return;
+      }
+
+      if (trimmedFirstName.length > 50 || trimmedLastName.length > 50) {
+        setError("Name fields cannot exceed 50 characters.");
+        return;
+      }
+      if (formData.major.length > 50) {
+        setError("Major field cannot exceed 50 characters.");
+        return;
+      }
+
+      if (!trimmedFirstName || !trimmedLastName || !formData.major) {
+        setError("Please fill in all fields.");
+        return;
+      }
+      try {
+        const finalData = {
+          ...formData,
+          email: trimmedEmail,
+          firstName: trimmedFirstName,
+          lastName: trimmedLastName,
+        };
+
+        console.log("Registration Complete:", finalData);
+      } catch (serverError) {
+        setError(serverError.response?.data?.message || "Something went wrong");
+      }
     }
   };
 
