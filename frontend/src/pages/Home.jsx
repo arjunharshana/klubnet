@@ -199,13 +199,11 @@ function Home() {
                 <div className="absolute -inset-4 rounded-xl bg-primary/10 blur-2xl"></div>
                 {}
                 <div className="relative aspect-[4/3] w-full rounded-xl bg-gradient-to-br from-card to-secondary/10 border border-border flex items-center justify-center shadow-2xl shadow-primary/10">
-                  {/* <span className="text-text/50 font-medium"> */}
                   <img
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAR50BymB03tb64X2idxn1SodyiYsq6TnZuZNzr8Ny2WUEPRkRWpXgB_qum2X7UZDhzzhWdYPgYxsrXQDgKYPZHk4p_LMccEApqHaxwy4KZ_GmpNPaxFhJ4eh1oBIHmY62uOmAVigjoAM65K_WDbFijX8Pn1rXHYu03npwnq9ZYOFtImfG-ULS_84qErU4fXAwvgekjaNZEm4zw-gwdPumfRgMIpVNGfvzTQV_1KSdstJbCRT_DItzNB5q925KFKu-EQnm4iZ6R6o"
                     alt="Illustration of students interacting"
                     className="relative aspect-[4/3] w-full rounded-xl object-cover shadow-2xl shadow-primary/10"
                   />
-                  {/* </span> */}
                 </div>
               </div>
               <div className="order-1 flex flex-col gap-6 lg:order-2">
@@ -347,7 +345,13 @@ function Home() {
               <div className="min-h-[400px] bg-text/5 relative">
                 {}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-text/50">Community Image</span>
+                  <div className="min-h-[400px] bg-primary/5 relative flex items-center justify-center p-8">
+                    <img
+                      src="https://illustrations.popsy.co/purple/creative-work.svg"
+                      alt="Students working together"
+                      className="w-full h-auto object-contain drop-shadow-xl"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
