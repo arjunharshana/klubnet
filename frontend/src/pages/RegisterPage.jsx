@@ -3,20 +3,15 @@ import { Link } from "react-router-dom";
 
 function RegisterPage() {
   // State for form inputs
-
   const [step, setStep] = useState(1);
-
   const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
     otp: "",
-    firstName: "",
-    lastName: "",
-    year: "",
-    branch: "",
   });
 
   const handleChange = (e) => {
@@ -27,12 +22,27 @@ function RegisterPage() {
     e.preventDefault();
     setError("");
 
+    const trimmedName = formData.name.trim();
     const trimmedEmail = formData.email.trim().toLowerCase();
-    const trimmedFirstName = formData.firstName.trim();
-    const trimmedLastName = formData.lastName.trim();
 
+    // details
     if (step === 1) {
-      // For otp
+      const nameRegex = /^[a-zA-Z\s-]+$/;
+      if (!nameRegex.test(trimmedName)) {
+        setError("Name can only contain letters, spaces, and hyphens.");
+        return;
+      }
+
+      if (!trimmedName) {
+        setError("Please enter your full name.");
+        return;
+      }
+
+      if (trimmedName.length > 50) {
+        setError("Name field cannot exceed 50 characters.");
+        return;
+      }
+
       if (trimmedEmail.length > 50) {
         setError("Email is too long (max 50 characters).");
         return;
@@ -53,74 +63,44 @@ function RegisterPage() {
         return;
       }
 
-      if (formData.password != formData.confirmPassword) {
+      if (formData.password !== formData.confirmPassword) {
         setError("Passwords do not match!");
         return;
       }
+
       try {
         // backend api call for otp
         console.log("OTP Sent");
         setStep(2);
       } catch (serverError) {
-        // Catch BACKEND validation (e.g., "Email already registered")
         setError(serverError.response?.data?.message || "Something went wrong");
       }
-      setStep(2);
-    } else if (step === 2) {
-      //for profile
+    }
+    // verify otp
+    else if (step === 2) {
       if (!/^\d{6}$/.test(formData.otp)) {
         setError("OTP must be exactly 6 digits.");
         return;
       }
 
       try {
-        //backend validation
+        // backend validation for OTP
         console.log("OTP Verified");
-        setStep(3);
+
+        // final registration api
+        const finalData = {
+          ...formData,
+          name: trimmedName,
+          email: trimmedEmail,
+          password: formData.password,
+        };
+
+        console.log("Registration Complete:", finalData);
       } catch (serverError) {
         setError(
           serverError.response?.data?.message ||
             "Invalid OTP. Please try again."
         );
-      }
-
-      setStep(3);
-    } else if (step === 3) {
-      // name validation
-
-      const nameRegex = /^[a-zA-Z\s-]+$/;
-      if (
-        !nameRegex.test(trimmedFirstName) ||
-        !nameRegex.test(trimmedLastName)
-      ) {
-        setError("Names can only contain letters.");
-        return;
-      }
-
-      if (trimmedFirstName.length > 50 || trimmedLastName.length > 50) {
-        setError("Name fields cannot exceed 50 characters.");
-        return;
-      }
-      if (formData.major.length > 50) {
-        setError("Major field cannot exceed 50 characters.");
-        return;
-      }
-
-      if (!trimmedFirstName || !trimmedLastName || !formData.major) {
-        setError("Please fill in all fields.");
-        return;
-      }
-      try {
-        const finalData = {
-          ...formData,
-          email: trimmedEmail,
-          firstName: trimmedFirstName,
-          lastName: trimmedLastName,
-        };
-
-        console.log("Registration Complete:", finalData);
-      } catch (serverError) {
-        setError(serverError.response?.data?.message || "Something went wrong");
       }
     }
   };
@@ -179,29 +159,26 @@ function RegisterPage() {
           </div>
 
           <div className="mt-12 w-full">
-            {/* Progress steps */}
+            {}
             <div className="mb-8 flex items-center justify-between">
-              {/* Step 1: Active */}
+              {/* account details */}
               <div className="flex flex-1 flex-col items-center gap-2 text-center">
                 <div className="flex size-10 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30">
                   <span className="material-symbols-outlined text-[20px] font-bold">
-                    mail
+                    person_add
                   </span>
                 </div>
-                <span className="text-sm font-bold text-primary">
-                  Signup Email
-                </span>
+                <span className="text-sm font-bold text-primary">Details</span>
               </div>
 
               <div className="h-0.5 flex-1 bg-border-light dark:bg-border-dark"></div>
 
-              {/* Step 2: Inactive or Active based on step */}
+              {/*verify otp */}
               <div
                 className={`flex flex-1 flex-col items-center gap-2 text-center transition-opacity duration-300 ${
                   step >= 2 ? "opacity-100" : "opacity-50"
                 }`}
               >
-                {}
                 <div
                   className={`flex size-10 items-center justify-center rounded-full transition-all duration-300 ${
                     step >= 2
@@ -230,45 +207,9 @@ function RegisterPage() {
                   Verify OTP
                 </span>
               </div>
-
-              <div className="h-0.5 flex-1 bg-border-light dark:bg-border-dark opacity-50"></div>
-
-              {/* Step 3: Active or Inactive based on step */}
-              <div
-                className={`flex flex-1 flex-col items-center gap-2 text-center transition-opacity duration-300 ${
-                  step >= 3 ? "opacity-100" : "opacity-50"
-                }`}
-              >
-                <div
-                  className={`flex size-10 items-center justify-center rounded-full transition-all duration-300 ${
-                    step >= 3
-                      ? "bg-primary text-white shadow-lg shadow-primary/30"
-                      : "bg-card-light border-2 border-border-light dark:bg-card-dark dark:border-border-dark"
-                  }`}
-                >
-                  <span
-                    className={`material-symbols-outlined text-[20px] ${
-                      step >= 3
-                        ? "text-white"
-                        : "text-muted-light dark:text-muted-dark"
-                    }`}
-                  >
-                    person
-                  </span>
-                </div>
-                <span
-                  className={`text-sm font-medium transition-colors duration-300 ${
-                    step >= 3
-                      ? "text-primary font-bold"
-                      : "text-muted-light dark:text-muted-dark"
-                  }`}
-                >
-                  Setup Profile
-                </span>
-              </div>
             </div>
 
-            {/* Form Card */}
+            {/* Form  */}
             <div className="w-full rounded-xl border border-border-light bg-card-light p-8 shadow-lg shadow-primary/5 dark:border-border-dark dark:bg-card-dark">
               <form onSubmit={handleNextStep} className="flex flex-col gap-6">
                 {/* error message */}
@@ -281,9 +222,27 @@ function RegisterPage() {
                   </div>
                 )}
 
-                {/* step 1, email & password */}
+                {/* details for signup */}
                 {step === 1 && (
                   <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 fade-in">
+                    <div className="flex flex-col gap-1.5 text-left">
+                      <label
+                        className="text-sm font-medium text-foreground-light dark:text-foreground-dark"
+                        htmlFor="name"
+                      >
+                        Full Name
+                      </label>
+                      <input
+                        id="name"
+                        type="text"
+                        placeholder="Your name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                        className="w-full rounded-lg border border-border-light bg-background-light py-3 px-4 text-base text-foreground-light outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-border-dark dark:bg-background-dark dark:text-foreground-dark"
+                      />
+                    </div>
+
                     <div className="flex flex-col gap-1.5 text-left">
                       <label
                         className="text-sm font-medium text-foreground-light dark:text-foreground-dark"
@@ -358,7 +317,7 @@ function RegisterPage() {
                   </div>
                 )}
 
-                {/* step 2, otp verification */}
+                {/* verify otp */}
                 {step === 2 && (
                   <div className="flex flex-col gap-6 text-center animate-in slide-in-from-right-8 fade-in">
                     <div className="flex flex-col gap-2">
@@ -390,66 +349,7 @@ function RegisterPage() {
                   </div>
                 )}
 
-                {/* step 3, profile setup*/}
-                {step === 3 && (
-                  <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 fade-in">
-                    <div className="flex gap-4">
-                      <div className="flex-1 flex flex-col gap-1.5 text-left">
-                        <label
-                          className="text-sm font-medium text-foreground-light dark:text-foreground-dark"
-                          htmlFor="firstName"
-                        >
-                          First Name
-                        </label>
-                        <input
-                          id="firstName"
-                          type="text"
-                          placeholder="First Name"
-                          value={formData.firstName}
-                          onChange={handleChange}
-                          required
-                          className="w-full rounded-lg border border-border-light bg-background-light py-3 px-4 text-base text-foreground-light outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-border-dark dark:bg-background-dark dark:text-foreground-dark"
-                        />
-                      </div>
-                      <div className="flex-1 flex flex-col gap-1.5 text-left">
-                        <label
-                          className="text-sm font-medium text-foreground-light dark:text-foreground-dark"
-                          htmlFor="lastName"
-                        >
-                          Last Name
-                        </label>
-                        <input
-                          id="lastName"
-                          type="text"
-                          placeholder="Last Name"
-                          value={formData.lastName}
-                          onChange={handleChange}
-                          required
-                          className="w-full rounded-lg border border-border-light bg-background-light py-3 px-4 text-base text-foreground-light outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-border-dark dark:bg-background-dark dark:text-foreground-dark"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1.5 text-left">
-                      <label
-                        className="text-sm font-medium text-foreground-light dark:text-foreground-dark"
-                        htmlFor="major"
-                      >
-                        Major / Branch
-                      </label>
-                      <input
-                        id="major"
-                        type="text"
-                        placeholder="Computer Science"
-                        value={formData.major}
-                        onChange={handleChange}
-                        required
-                        className="w-full rounded-lg border border-border-light bg-background-light py-3 px-4 text-base text-foreground-light outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-border-dark dark:bg-background-dark dark:text-foreground-dark"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* nav buttons*/}
+                {/* navigation buttons */}
                 <div className="flex gap-3">
                   {step > 1 && (
                     <button
@@ -465,7 +365,7 @@ function RegisterPage() {
                     type="submit"
                     className="group relative flex h-12 flex-[2] items-center justify-center rounded-full bg-primary px-6 text-base font-bold text-white shadow-lg shadow-primary/40 transition-transform duration-300 hover:scale-105 active:scale-95"
                   >
-                    <span>{step === 3 ? "Finish" : "Continue"}</span>
+                    <span>{step === 2 ? "Finish" : "Continue"}</span>
                     <span className="material-symbols-outlined ml-2 text-[20px] transition-transform duration-300 group-hover:translate-x-1">
                       arrow_forward
                     </span>
