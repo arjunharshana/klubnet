@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, navigate } from "react-router-dom";
+import axios from "axios";
 
 function RegisterPage() {
   // State for form inputs
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -55,47 +57,59 @@ function RegisterPage() {
       }
 
       const passwordComplexityRegex =
-        /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,128}$/;
+        /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/;
       if (!passwordComplexityRegex.test(formData.password)) {
         setError(
-          "Password must be 8+ chars, include a number & special character (!@#$)."
+          "Password must be 8+ chars, one uppercase letter, one lowercase letter, one number & special character (!@#$)."
         );
+        setLoading(false);
         return;
       }
 
       if (formData.password !== formData.confirmPassword) {
         setError("Passwords do not match!");
+        setLoading(false);
+        return;
+      }
+
+      if (error) {
+        setLoading(false);
         return;
       }
 
       try {
-        // backend api call for otp
-        console.log("OTP Sent");
+        const apiUri = import.meta.env.VITE_API_URI;
+        const response = await axios.post(`${apiUri}/api/users/register`, {
+          name: trimmedName,
+          email: trimmedEmail,
+          password: formData.password,
+        });
+        console.log("Backend Response:", response.data);
         setStep(2);
       } catch (serverError) {
         setError(serverError.response?.data?.message || "Something went wrong");
+      } finally {
+        setLoading(false);
       }
     }
     // verify otp
     else if (step === 2) {
       if (!/^\d{6}$/.test(formData.otp)) {
         setError("OTP must be exactly 6 digits.");
+        setLoading(false);
         return;
       }
 
       try {
-        // backend validation for OTP
-        console.log("OTP Verified");
-
-        // final registration api
-        const finalData = {
-          ...formData,
-          name: trimmedName,
+        const apiUri = import.meta.env.VITE_API_URI;
+        const response = await axios.post(`${apiUri}/api/users/verify-otp`, {
           email: trimmedEmail,
-          password: formData.password,
-        };
+          otp: formData.otp,
+        });
+        console.log("OTP Verified", response.data);
 
-        console.log("Registration Complete:", finalData);
+        // Redirect to Dashboard or Home after successful verification
+        navigate("/");
       } catch (serverError) {
         setError(
           serverError.response?.data?.message ||
@@ -363,12 +377,23 @@ function RegisterPage() {
 
                   <button
                     type="submit"
+                    disabled={loading}
                     className="group relative flex h-12 flex-[2] items-center justify-center rounded-full bg-primary px-6 text-base font-bold text-white shadow-lg shadow-primary/40 transition-transform duration-300 hover:scale-105 active:scale-95"
                   >
-                    <span>{step === 2 ? "Finish" : "Continue"}</span>
-                    <span className="material-symbols-outlined ml-2 text-[20px] transition-transform duration-300 group-hover:translate-x-1">
-                      arrow_forward
+                    <span>
+                      {loading
+                        ? "Processing..."
+                        : step === 2
+                        ? "Finish"
+                        : "Continue"}
                     </span>
+
+                    {/* loading spinner*/}
+                    {!loading && (
+                      <span className="material-symbols-outlined ml-2 text-[20px] transition-transform duration-300 group-hover:translate-x-1">
+                        arrow_forward
+                      </span>
+                    )}
                   </button>
                 </div>
               </form>

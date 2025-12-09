@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ function LoginPage() {
 
   // State for error messages
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -20,6 +22,7 @@ function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     const trimmedEmail = formData.email.trim().toLowerCase();
 
@@ -35,16 +38,25 @@ function LoginPage() {
     }
 
     try {
-      console.log("Attempting Login with:", {
-        email: trimmedEmail,
-        password: formData.password,
-      });
+      const apiUri = import.meta.env.VITE_API_URI;
+      const response = await axios.post(
+        `${apiUri}/api/users/login`,
+        {
+          email: trimmedEmail,
+          password: formData.password,
+        },
+        { withCredentials: true }
+      );
 
-      // backend login api
+      console.log("Login successful:", response.data);
 
       navigate("/");
     } catch (err) {
-      setError("Invalid email or password. Please try again.");
+      setError(
+        err.response?.data?.message || "Login failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -172,12 +184,15 @@ function LoginPage() {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="group relative flex h-12 w-full items-center justify-center rounded-full bg-primary px-6 text-base font-bold text-white shadow-lg shadow-primary/40 transition-transform duration-300 hover:scale-105 active:scale-95"
+                  disabled={loading}
+                  className="group relative flex h-12 w-full items-center justify-center rounded-full bg-primary px-6 text-base font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <span>Login</span>
-                  <span className="material-symbols-outlined ml-2 text-[20px] transition-transform duration-300 group-hover:translate-x-1">
-                    arrow_forward
-                  </span>
+                  <span>{loading ? "Logging in..." : "Login"}</span>
+                  {!loading && (
+                    <span className="material-symbols-outlined ml-2 transition-transform group-hover:translate-x-1">
+                      arrow_forward
+                    </span>
+                  )}
                 </button>
               </form>
             </div>
