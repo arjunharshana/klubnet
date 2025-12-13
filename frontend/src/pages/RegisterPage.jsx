@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, navigate } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function RegisterPage() {
   // State for form inputs
@@ -108,6 +109,8 @@ function RegisterPage() {
         });
         console.log("OTP Verified", response.data);
 
+        login(response.data);
+
         // Redirect to Dashboard or Home after successful verification
         navigate("/");
       } catch (serverError) {
@@ -118,6 +121,8 @@ function RegisterPage() {
       }
     }
   };
+
+  const { login } = useAuth();
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark selection:bg-primary/20">
