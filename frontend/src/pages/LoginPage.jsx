@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -50,6 +51,8 @@ function LoginPage() {
 
       console.log("Login successful:", response.data);
 
+      login(response.data);
+
       navigate("/");
     } catch (err) {
       setError(
@@ -60,6 +63,7 @@ function LoginPage() {
     }
   };
 
+  const { login } = useAuth();
   return (
     <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark selection:bg-primary/20">
       {/* header */}
