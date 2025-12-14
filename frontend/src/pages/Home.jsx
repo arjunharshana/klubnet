@@ -1,11 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
 
 function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background text-text font-display selection:bg-primary/20">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/80 backdrop-blur-xl">
+      {/* <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-20 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/30">
@@ -22,7 +23,7 @@ function Home() {
               KlubNet
             </h2>
           </div>
-          {/*Navbar*/}
+
           <nav className="hidden items-center gap-1 rounded-full border border-border bg-card/50 p-1 md:flex">
             <a
               className="rounded-full px-4 py-2 text-sm font-medium text-text transition-colors hover:text-primary"
@@ -62,7 +63,9 @@ function Home() {
             </Link>
           </div>
         </div>
-      </header>
+      </header> */}
+
+      <Navbar />
 
       <main className="flex-1">
         {/* Main section */}

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Link, navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import axios from "axios";
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuth } from "../hooks/useAuth.js";
+import Navbar from "../components/Navbar.jsx";
 
 function RegisterPage() {
   // State for form inputs
@@ -112,7 +113,7 @@ function RegisterPage() {
         login(response.data);
 
         // Redirect to Dashboard or Home after successful verification
-        navigate("/");
+        Navigate("/");
       } catch (serverError) {
         setError(
           serverError.response?.data?.message ||
@@ -127,7 +128,7 @@ function RegisterPage() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark selection:bg-primary/20">
       {/* HEADER */}
-      <header className="sticky top-0 z-50 w-full border-b border-border-light/80 dark:border-border-dark/60 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl">
+      {/* <header className="sticky top-0 z-50 w-full border-b border-border-light/80 dark:border-border-dark/60 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-20 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <Link
@@ -162,7 +163,9 @@ function RegisterPage() {
             </Link>
           </div>
         </div>
-      </header>
+      </header> */}
+
+      <Navbar />
 
       <main className="flex-1">
         <div className="container mx-auto flex max-w-xl flex-col justify-center px-4 py-16 md:py-24">
