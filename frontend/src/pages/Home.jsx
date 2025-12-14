@@ -6,64 +6,6 @@ function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background text-text font-display selection:bg-primary/20">
       {/* Header */}
-      {/* <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto flex h-20 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/30">
-              <svg
-                className="size-6"
-                fill="currentColor"
-                viewBox="0 0 48 48"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M6 6H42L36 24L42 42H6L12 24L6 6Z"></path>
-              </svg>
-            </div>
-            <h2 className="text-2xl font-extrabold tracking-tight text-text">
-              KlubNet
-            </h2>
-          </div>
-
-          <nav className="hidden items-center gap-1 rounded-full border border-border bg-card/50 p-1 md:flex">
-            <a
-              className="rounded-full px-4 py-2 text-sm font-medium text-text transition-colors hover:text-primary"
-              href="#"
-            >
-              Home
-            </a>
-            <a
-              className="rounded-full px-4 py-2 text-sm font-medium text-text/60 transition-colors hover:text-primary"
-              href="#features"
-            >
-              Features
-            </a>
-            <a
-              className="rounded-full px-4 py-2 text-sm font-medium text-text/60 transition-colors hover:text-primary"
-              href="#about"
-            >
-              About
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <Link
-              to="/login"
-              className="flex h-11 items-center justify-center rounded-full px-5 text-base font-bold text-primary transition-colors hover:bg-primary/10"
-            >
-              <span>Login</span>
-            </Link>
-            <Link
-              to="/register"
-              className="group relative flex h-11 items-center justify-center rounded-full bg-primary px-5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/40 transition-transform duration-300 hover:scale-105"
-            >
-              <span>Sign Up</span>
-              <span className="material-symbols-outlined ml-2 transition-transform duration-300 group-hover:translate-x-1">
-                arrow_forward
-              </span>
-            </Link>
-          </div>
-        </div>
-      </header> */}
 
       <Navbar />
 

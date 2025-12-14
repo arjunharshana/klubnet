@@ -50,8 +50,6 @@ function LoginPage() {
         { withCredentials: true }
       );
 
-      console.log("Login successful:", response.data);
-
       login(response.data);
 
       navigate("/");
@@ -68,42 +66,6 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark selection:bg-primary/20">
       {/* header */}
-      {/* <header className="sticky top-0 z-50 w-full border-b border-border-light/80 dark:border-border-dark/60 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl">
-        <div className="container mx-auto flex h-20 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <Link
-              to="/"
-              className="flex size-10 items-center justify-center rounded-lg bg-primary text-white shadow-lg shadow-primary/30"
-            >
-              <svg
-                className="size-6"
-                fill="currentColor"
-                viewBox="0 0 48 48"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M6 6H42L36 24L42 42H6L12 24L6 6Z"></path>
-              </svg>
-            </Link>
-            <Link
-              to="/"
-              className="text-2xl font-extrabold tracking-tight text-foreground-light dark:text-foreground-dark"
-            >
-              KlubNet
-            </Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline text-sm text-muted-light dark:text-muted-dark">
-              Don't have an account?
-            </span>
-            <Link
-              to="/register"
-              className="flex h-11 items-center justify-center rounded-full px-5 text-base font-bold text-primary transition-colors hover:bg-primary/10"
-            >
-              <span>Sign up</span>
-            </Link>
-          </div>
-        </div>
-      </header> */}
 
       <Navbar />
 
