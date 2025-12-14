@@ -290,7 +290,7 @@ function Home() {
               <div className="bg-text/5 ">
                 {}
                 <div className="flex items-center justify-center">
-                  <div className="min-h-[400px] bg-primary/5 relative flex items-center justify-center p-8 max-w-[600px] md:max-w-[500px] lg:max-w-[700px] mx-auto w-full">
+                  <div className="min-h-[400px] bg-primary/5 dark:bg-primary/50 relative flex items-center justify-center p-8 max-w-[600px] md:max-w-[500px] lg:max-w-[700px] mx-auto w-full">
                     <img
                       src="https://illustrations.popsy.co/purple/creative-work.svg"
                       alt="Students working together"
@@ -321,7 +321,7 @@ function Home() {
                 </div>
                 <Link
                   to="/register"
-                  className="group flex h-14 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full bg-background px-8 text-lg font-bold text-primary shadow-lg transition-transform duration-300 hover:scale-105"
+                  className="group flex h-14 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full bg-background dark:bg-background/80 px-8 text-lg font-bold text-primary shadow-lg transition-transform duration-300 hover:scale-105"
                 >
                   <span className="truncate">Sign Up for Free</span>
                   <span className="material-symbols-outlined ml-2 transition-transform duration-300 group-hover:translate-x-1">
