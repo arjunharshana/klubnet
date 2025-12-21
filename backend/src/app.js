@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const userRoutes = require("./routes/userRoutes");
+const clubRoutes = require("./routes/clubRoutes");
 
 dotenv.config();
 
