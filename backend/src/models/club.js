@@ -43,6 +43,8 @@ const clubSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSOn: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
