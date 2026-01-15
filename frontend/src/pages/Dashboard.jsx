@@ -3,13 +3,21 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
-import { Sun, Moon } from "lucide-react"; // Ensure you have lucide-react installed
+import { Sun, Moon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
-  const { user } = useAuth();
-
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [myClubs, setMyClubs] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // If auth check is done and there is no user
+    if (!authLoading && !user) {
+      navigate("/login"); // redirect to login
+    }
+  }, [user, authLoading, navigate]);
 
   const { theme, toggleTheme } = useTheme();
   // fetch user's clubs
@@ -32,6 +40,7 @@ const Dashboard = () => {
     };
 
     if (user) fetchMyClubs();
+    else setLoading(false);
   }, [user]);
 
   // Helper for Greetings
