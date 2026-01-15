@@ -1,0 +1,175 @@
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../hooks/useTheme";
+import { Sun, Moon, LogOut, User, Settings, Bell } from "lucide-react";
+
+const DashboardNavbar = () => {
+  const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+
+  // Local state for dropdowns
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  // Helper to close menus
+  const closeAll = () => {
+    setShowProfileMenu(false);
+    setShowNotifications(false);
+  };
+
+  return (
+    <>
+      {/* */}
+      {(showProfileMenu || showNotifications) && (
+        <div className="fixed inset-0 z-40" onClick={closeAll}></div>
+      )}
+
+      {/*Navbar */}
+      <header className="sticky top-0 z-50 w-full border-b border-border-light/80 dark:border-border-dark/60 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl">
+        <div className="px-6 md:px-10 py-3 flex items-center justify-between gap-4">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3 shrink-0 group z-50">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-white shadow-lg shadow-primary/30 transition-transform group-hover:scale-105">
+              <svg className="size-6" fill="currentColor" viewBox="0 0 48 48">
+                <path d="M6 6H42L36 24L42 42H6L12 24L6 6Z"></path>
+              </svg>
+            </div>
+            <h2 className="text-xl font-extrabold tracking-tight text-foreground-light dark:text-foreground-dark">
+              KlubNet
+            </h2>
+          </Link>
+
+          {/* Search*/}
+          <div className="hidden md:flex flex-1 max-w-md mx-4 z-50">
+            <div className="relative w-full">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted-light">
+                search
+              </span>
+              <input
+                type="text"
+                placeholder="Search clubs, events..."
+                className="w-full h-10 pl-10 pr-4 rounded-full bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-foreground-light dark:text-foreground-dark"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 sm:gap-5 z-50">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-muted-light/10 dark:hover:bg-muted-dark/10 transition-colors text-muted-light dark:text-muted-dark"
+            >
+              {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+
+            {/* Notification Bell */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 rounded-full hover:bg-muted-light/10 dark:hover:bg-muted-dark/10 transition-colors text-muted-light dark:text-muted-dark"
+              >
+                <Bell size={20} />
+                <span className="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full border-2 border-background-light dark:border-background-dark"></span>
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-white dark:bg-gray-800 border border-border-light dark:border-gray-700 shadow-xl overflow-hidden">
+                  <div className="p-4 border-b border-border-light dark:border-gray-700">
+                    <h3 className="font-bold text-sm text-foreground-light dark:text-foreground-dark">
+                      Notifications
+                    </h3>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto p-2">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg cursor-pointer flex gap-3 items-start"
+                      >
+                        <div className="size-2 mt-2 rounded-full bg-primary shrink-0"></div>
+                        <div>
+                          <p className="text-sm font-medium leading-tight text-foreground-light dark:text-foreground-dark">
+                            New Event in Coding Club
+                          </p>
+                          <p className="text-xs text-muted-light dark:text-muted-dark mt-1">
+                            2 hours ago
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Create Club Button */}
+            <Link
+              to="/create-club"
+              className="hidden sm:flex h-9 items-center px-4 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-full shadow-lg shadow-primary/25 transition-transform hover:scale-105 active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[18px] mr-2">
+                add
+              </span>
+              Create Club
+            </Link>
+
+            {/* Profile Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="size-9 rounded-full bg-gradient-to-br from-primary to-purple-600 p-[2px] cursor-pointer shadow-md transition-transform hover:scale-105"
+              >
+                <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 flex items-center justify-center">
+                  <span className="font-bold text-primary text-sm">
+                    {(user?.name?.charAt(0) || "U").toUpperCase()}
+                  </span>
+                </div>
+              </button>
+
+              {showProfileMenu && (
+                <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-white dark:bg-gray-800 border border-border-light dark:border-gray-700 shadow-xl overflow-hidden">
+                  <div className="p-4 border-b border-border-light dark:border-gray-700">
+                    <p className="font-bold text-sm truncate text-foreground-light dark:text-foreground-dark">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-muted-light dark:text-muted-dark truncate">
+                      {user?.email}
+                    </p>
+                  </div>
+                  <div className="p-2">
+                    <Link
+                      to="/profile"
+                      className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-foreground-light dark:text-foreground-dark"
+                    >
+                      <User size={16} /> Profile
+                    </Link>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left text-foreground-light dark:text-foreground-dark">
+                      <Settings size={16} /> Settings
+                    </button>
+                  </div>
+                  <div className="p-2 border-t border-border-light dark:border-gray-700">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-left"
+                    >
+                      <LogOut size={16} /> Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+    </>
+  );
+};
+
+export default DashboardNavbar;
