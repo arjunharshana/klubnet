@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import { Sun, Moon, LogOut, User, Settings, Bell } from "lucide-react";
@@ -24,6 +24,14 @@ const DashboardNavbar = () => {
     setShowNotifications(false);
   };
 
+  const location = useLocation(); // <--- Add this hook
+
+  const getLinkClass = (path) => {
+    return location.pathname === path
+      ? "text-primary font-bold transition-colors"
+      : "text-muted-light dark:text-muted-dark font-medium hover:text-primary transition-colors";
+  };
+
   return (
     <>
       {/* */}
@@ -46,7 +54,7 @@ const DashboardNavbar = () => {
             </h2>
           </Link>
 
-          {/* Search*/}
+          {/* Center: Search (Hidden on mobile) */}
           <div className="hidden md:flex flex-1 max-w-md mx-4 z-50">
             <div className="relative w-full">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted-light">
@@ -60,7 +68,19 @@ const DashboardNavbar = () => {
             </div>
           </div>
 
-          {/* Actions */}
+          <nav className="hidden lg:flex items-center gap-6 text-sm mr-auto ml-6 z-50">
+            <Link to="/dashboard" className={getLinkClass("/dashboard")}>
+              Home
+            </Link>
+            <Link to="/explore" className={getLinkClass("/explore")}>
+              Explore
+            </Link>
+            <Link to="/messages" className={getLinkClass("/messages")}>
+              Messages
+            </Link>
+          </nav>
+
+          {/* Right: Actions */}
           <div className="flex items-center gap-3 sm:gap-5 z-50">
             {/* Theme Toggle */}
             <button

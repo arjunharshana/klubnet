@@ -13,12 +13,12 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   // auth check and redirect
-  useEffect(() => {
-    // If auth check is done and there is no user
-    if (!authLoading && !user) {
-      navigate("/login"); // redirect to login
-    }
-  }, [user, authLoading, navigate]);
+  // useEffect(() => {
+  //   // If auth check is done and there is no user
+  //   if (!authLoading && !user) {
+  //     navigate("/login"); // redirect to login
+  //   }
+  // }, [user, authLoading, navigate]);
 
   // fetch user's clubs
   useEffect(() => {
@@ -44,13 +44,13 @@ const Dashboard = () => {
   }, [user]);
 
   // Show loading state while checking auth
-  if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
-        Loading...
-      </div>
-    );
-  }
+  // if (authLoading) {
+  //   return (
+  //     <div className="flex min-h-screen items-center justify-center bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
+  //       Loading...
+  //     </div>
+  //   );
+  // }
 
   // Helper for Greetings
   const today = new Date();
