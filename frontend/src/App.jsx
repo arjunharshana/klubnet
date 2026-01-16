@@ -5,6 +5,7 @@ import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Explore from "./pages/Explore.jsx";
+import CreateClub from "./pages/CreateClub.jsx";
 
 function NotFound() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/explore" element={<Explore />} />
+        <Route path="/create-club" element={<CreateClub />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

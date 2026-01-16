@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth.jsx";
+import { useAuth } from "../hooks/useAuth.js";
 import DashboardNavbar from "../components/DashboardNavbar";
 
 const CATEGORIES = [
