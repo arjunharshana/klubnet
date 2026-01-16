@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../middleware/uploadMiddleware");
 
 const {
   createClub,
@@ -13,7 +14,13 @@ const { rateLimiter } = require("../middleware/rateLimiter");
 router.get("/", getAllClubs);
 router.get(":id", getClubs);
 
-router.post("/", authMiddleware, rateLimiter, createClub);
+router.post(
+  "/",
+  authMiddleware,
+  upload.single("image"),
+  rateLimiter,
+  createClub
+);
 router.delete("/:id", authMiddleware, deleteClub);
 
 module.exports = router;

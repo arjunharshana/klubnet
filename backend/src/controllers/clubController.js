@@ -1,15 +1,34 @@
 const Club = require("../models/club");
 const User = require("../models/user");
+const asynchandler = require("express-async-handler");
+const cloudinary = require("../config/cloudinary");
+const fs = require("fs");
 
 const createClub = async (req, res) => {
   try {
-    const { name, description, category, imageUrl } = req.body;
+    const { name, description, category } = req.body;
     const adminId = req.user.id;
 
     if (!name || !description || !category) {
       return res
         .status(400)
         .json({ message: "Name, description, and category are required." });
+    }
+
+    let imageUrl = "";
+
+    if (req.file) {
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "klubnet/clubs",
+          use_filename: true,
+        });
+        imageUrl = result.secure_url;
+        fs.unlinkSync(req.file.path); // Delete the file from local uploads folder
+      } catch (error) {
+        res.status(500);
+        throw new Error("Image upload failed");
+      }
     }
 
     const existingClub = await Club.findOne({ name });
@@ -23,7 +42,7 @@ const createClub = async (req, res) => {
       name,
       description,
       category,
-      imageUrl,
+      image: imageUrl,
       admin: adminId,
       members: [adminId],
     });
