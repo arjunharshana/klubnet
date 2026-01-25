@@ -89,7 +89,7 @@ const ClubDetails = () => {
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark transition-colors duration-300">
-      {/* 1. Navbar */}
+      {/* navbar */}
       <DashboardNavbar />
 
       <main className="flex-grow pb-12 relative">
@@ -100,7 +100,7 @@ const ClubDetails = () => {
         </div>
 
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          {/* 2. Breadcrumbs */}
+          {/*breadcrumbs */}
           <div className="py-6 flex items-center gap-2 text-sm text-muted-light dark:text-muted-dark">
             <span
               className="hover:text-primary cursor-pointer"
@@ -121,7 +121,7 @@ const ClubDetails = () => {
             </span>
           </div>
 
-          {/* 3. Hero Section */}
+          {/* hero section */}
           <div className="relative w-full overflow-hidden rounded-2xl shadow-lg group mb-8 h-[300px] md:h-[350px]">
             {/* Cover Image */}
             <div
@@ -152,11 +152,11 @@ const ClubDetails = () => {
             </div>
           </div>
 
-          {/* 4. Main Grid Layout */}
+          {/* main grid layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* --- LEFT COLUMN (Main Content) --- */}
+            {/* left column*/}
             <div className="lg:col-span-8 flex flex-col gap-8">
-              {/* About Section */}
+              {/* about section */}
               <section className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/50 dark:border-gray-700 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -169,7 +169,7 @@ const ClubDetails = () => {
                 </div>
               </section>
 
-              {/* Bento Grid Gallery (Placeholders) */}
+              {/*gallery bento*/}
               <section>
                 <div className="flex items-center justify-between mb-4 px-1">
                   <div className="flex items-center gap-3">
@@ -184,7 +184,7 @@ const ClubDetails = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[400px]">
-                  {/* Large Left Image */}
+                  {/* large left image */}
                   <div className="relative w-full h-full rounded-2xl overflow-hidden group shadow-sm">
                     <img
                       src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=800"
@@ -196,7 +196,7 @@ const ClubDetails = () => {
                     </div>
                   </div>
 
-                  {/* Right Column Stack */}
+                  {/* right column stack */}
                   <div className="flex flex-col gap-4 h-full">
                     <div className="relative flex-1 w-full rounded-2xl overflow-hidden group shadow-sm">
                       <img
@@ -216,7 +216,7 @@ const ClubDetails = () => {
                 </div>
               </section>
 
-              {/* Upcoming Events (Placeholder) */}
+              {/* upcoming events (placeholder) */}
               <section className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/50 dark:border-gray-700 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -263,10 +263,10 @@ const ClubDetails = () => {
               </section>
             </div>
 
-            {/* --- RIGHT COLUMN (Sticky Sidebar) --- */}
+            {/* sidebar */}
             <div className="lg:col-span-4 relative">
               <div className="sticky top-24 space-y-6">
-                {/* 1. Action Card */}
+                {/* action card */}
                 <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl shadow-primary/5 border border-white/50 dark:border-gray-700">
                   {/* Join/Leave Button */}
                   <button
@@ -309,7 +309,7 @@ const ClubDetails = () => {
                     </span>
                   </div>
 
-                  {/* Avatar Stack */}
+                  {/* avatar stack */}
                   <div className="flex -space-x-3 mb-6 overflow-hidden py-1 pl-1">
                     {[1, 2, 3, 4].map((i) => (
                       <div
@@ -352,7 +352,7 @@ const ClubDetails = () => {
                   </button>
                 </div>
 
-                {/* 2. Mini Info Card */}
+                {/* info card */}
                 <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-5 border border-white/50 dark:border-gray-700">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-2 rounded-xl bg-purple-50 dark:bg-primary/10">

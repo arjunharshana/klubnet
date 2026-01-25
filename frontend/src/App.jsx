@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Explore from "./pages/Explore.jsx";
 import CreateClub from "./pages/CreateClub.jsx";
 import ClubDetails from "./pages/ClubDetails.jsx";
+import Profile from "./pages/Profile.jsx";
 
 function NotFound() {
   return (
@@ -34,6 +35,7 @@ function App() {
         <Route path="/explore" element={<Explore />} />
         <Route path="/create-club" element={<CreateClub />} />
         <Route path="/clubs/:id" element={<ClubDetails />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
