@@ -111,8 +111,7 @@ const updateEvent = asyncHandler(async (req, res) => {
     { new: true },
   );
   res.status(200).json({ success: true, data: updatedEvent });
-}
-
+});
 
 module.exports = {
   createEvent,
@@ -120,4 +119,5 @@ module.exports = {
   getAllEvents,
   deleteEvent,
   joinEvent,
+  updateEvent,
 };
