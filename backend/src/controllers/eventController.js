@@ -51,8 +51,50 @@ const getAllEvents = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, count: events.length, data: events });
 });
 
+const deleteEvent = asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.eventId);
+
+  if (!event) {
+    res.status(404);
+    throw new Error("Event not found");
+  }
+
+  //checking for admin role
+  const club = await Club.findById(event.club);
+  if (club.admin.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error("Only club admins can delete events");
+  }
+
+  await event.deleteOne();
+  res.status(200).json({ message: "Event deleted successfully" });
+});
+
+const joinEvent = asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.eventId);
+  if (!event) {
+    res.status(404);
+    throw new Error("Event not found");
+  }
+  if (event.attendees.includes(req.user._id)) {
+    event.attendees = event.attendees.filter(
+      (id) => id.toString() !== req.user._id.toString(),
+    );
+    await event.save();
+    return res
+      .status(200)
+      .json({ success: true, isJoined: false, data: event });
+  }
+
+  event.attendees.push(req.user._id);
+  await event.save();
+  res.status(200).json({ success: true, isJoined: true, data: event });
+});
+
 module.exports = {
   createEvent,
   getClubEvents,
   getAllEvents,
+  deleteEvent,
+  joinEvent,
 };
