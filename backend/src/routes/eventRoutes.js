@@ -7,11 +7,13 @@ const {
   deleteEvent,
   joinEvent,
   updateEvent,
+  getUserEvents,
 } = require("../controllers/eventController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 
 router.get("/", getAllEvents);
 router.get("/club/:clubId", getClubEvents);
+router.get("/myevents", authMiddleware, getUserEvents);
 
 router.post("/", authMiddleware, createEvent);
 

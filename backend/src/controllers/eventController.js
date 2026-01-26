@@ -113,6 +113,17 @@ const updateEvent = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: updatedEvent });
 });
 
+const getUserEvents = asyncHandler(async (req, res) => {
+  const events = await Event.find({
+    attendees: req.user.id,
+    date: { $gte: new Date() },
+  })
+    .populate("club", "name image")
+    .sort({ date: 1 });
+
+  res.status(200).json({ success: true, count: events.length, data: events });
+});
+
 module.exports = {
   createEvent,
   getClubEvents,
@@ -120,4 +131,5 @@ module.exports = {
   deleteEvent,
   joinEvent,
   updateEvent,
+  getUserEvents,
 };
