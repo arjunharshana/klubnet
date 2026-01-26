@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const userRoutes = require("./routes/userRoutes");
 const clubRoutes = require("./routes/clubRoutes");
+const eventRoutes = require("./routes/eventRoutes");
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL,
     credentials: true,
-  })
+  }),
 );
 app.use(cookieParser());
 
@@ -28,6 +29,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/users", userRoutes);
 app.use("/api/clubs", clubRoutes);
+app.use("/api/events", eventRoutes);
 
 app.use((req, res, next) => {
   res.status(404).json({ message: "Route not found" });
