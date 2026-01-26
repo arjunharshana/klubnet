@@ -46,6 +46,7 @@ const getClubEvents = asyncHandler(async (req, res) => {
 const getAllEvents = asyncHandler(async (req, res) => {
   const events = await Event.find({ date: { $gte: new Date() } })
     .populate("club", "name image")
+    .populate("attendees", "name image")
     .sort({ date: 1 });
 
   res.status(200).json({ success: true, count: events.length, data: events });
@@ -90,6 +91,28 @@ const joinEvent = asyncHandler(async (req, res) => {
   await event.save();
   res.status(200).json({ success: true, isJoined: true, data: event });
 });
+
+const updateEvent = asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.eventId);
+  if (!event) {
+    res.status(404);
+    throw new Error("Event not found");
+  }
+  //checking for admin role
+  const club = await Club.findById(event.club);
+  if (club.admin.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error("Only club admins can update events");
+  }
+
+  const updatedEvent = await Event.findByIdAndUpdate(
+    req.params.eventId,
+    req.body,
+    { new: true },
+  );
+  res.status(200).json({ success: true, data: updatedEvent });
+}
+
 
 module.exports = {
   createEvent,
