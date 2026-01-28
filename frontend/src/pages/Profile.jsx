@@ -25,6 +25,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("My Clubs");
   const [search, setSearch] = useState("");
+  const [myEvents, setMyEvents] = useState([]);
 
   // 1. Fetch User's Joined Clubs
   useEffect(() => {
@@ -38,6 +39,11 @@ const Profile = () => {
             club.members.some((member) => member._id === user._id),
           );
           setMyClubs(joined);
+
+          const eventRes = await axios.get(`${API_URL}/api/events/myevents`, {
+            withCredentials: true,
+          });
+          setMyEvents(eventRes.data.data);
         }
       } catch (err) {
         console.error("Failed to fetch clubs", err);
@@ -111,12 +117,48 @@ const Profile = () => {
               <h3 className="font-bold text-sm text-muted-light dark:text-muted-dark uppercase tracking-wider mb-4">
                 On your calendar
               </h3>
+
               <div className="space-y-3">
-                <div className="flex gap-3 items-start opacity-60">
-                  <p className="text-sm italic text-muted-light dark:text-muted-dark">
-                    No upcoming events.
-                  </p>
-                </div>
+                {myEvents.length > 0 ? (
+                  myEvents.slice(0, 3).map((event) => (
+                    <div
+                      key={event._id}
+                      className="flex gap-3 items-start cursor-pointer hover:bg-white/50 p-2 rounded-lg transition-colors"
+                      onClick={() => navigate(`/clubs/${event.club._id}`)}
+                    >
+                      {/* Date Box */}
+                      <div className="bg-primary/10 text-primary rounded-lg p-2 min-w-[50px] flex flex-col items-center justify-center text-xs font-bold leading-tight">
+                        <span className="uppercase">
+                          {new Date(event.date).toLocaleString("default", {
+                            month: "short",
+                          })}
+                        </span>
+                        <span className="text-lg">
+                          {new Date(event.date).getDate()}
+                        </span>
+                      </div>
+                      {/* Info */}
+                      <div>
+                        <p className="text-foreground-light dark:text-foreground-dark font-bold text-sm line-clamp-1">
+                          {event.title}
+                        </p>
+                        <p className="text-muted-light dark:text-muted-dark text-xs mt-1">
+                          {new Date(event.date).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}{" "}
+                          • {event.location}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex gap-3 items-start opacity-60">
+                    <p className="text-sm italic text-muted-light dark:text-muted-dark">
+                      No upcoming events.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </aside>
@@ -271,12 +313,71 @@ const Profile = () => {
             )}
 
             {activeTab === "Events" && (
-              <div className="text-center py-20 opacity-50">
-                <Calendar size={48} className="mx-auto mb-4" />
-                <p className="font-bold">Events Dashboard Coming Soon</p>
+              <div className="flex flex-col gap-4">
+                {myEvents.length > 0 ? (
+                  myEvents.map((event) => (
+                    <div
+                      key={event._id}
+                      className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-5 flex flex-col md:flex-row gap-5 items-center border border-white/50 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => navigate(`/clubs/${event.club._id}`)}
+                    >
+                      {/* Date Badge */}
+                      <div className="flex-shrink-0 w-full md:w-20 h-20 rounded-xl bg-primary/5 flex flex-col items-center justify-center text-primary border border-primary/10">
+                        <span className="text-sm font-bold uppercase">
+                          {new Date(event.date).toLocaleString("default", {
+                            month: "short",
+                          })}
+                        </span>
+                        <span className="text-3xl font-bold">
+                          {new Date(event.date).getDate()}
+                        </span>
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-grow min-w-0 text-center md:text-left">
+                        <h3 className="text-lg font-bold text-foreground-light dark:text-foreground-dark">
+                          {event.title}
+                        </h3>
+                        <p className="text-sm text-muted-light dark:text-muted-dark mb-1 flex items-center justify-center md:justify-start gap-2">
+                          <span className="flex items-center gap-1">
+                            <Clock size={14} />{" "}
+                            {new Date(event.date).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <MapPin size={14} /> {event.location}
+                          </span>
+                        </p>
+                        <p className="text-sm text-primary font-medium flex items-center justify-center md:justify-start gap-1">
+                          Hosted by {event.club?.name}
+                        </p>
+                      </div>
+
+                      {/* Action */}
+                      <button className="flex-shrink-0 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-bold shadow-sm">
+                        View Details
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-20 opacity-50">
+                    <Calendar size={48} className="mx-auto mb-4" />
+                    <p className="font-bold">
+                      You haven't joined any events yet.
+                    </p>
+                    <button
+                      onClick={() => navigate("/explore")}
+                      className="text-primary hover:underline text-sm mt-2"
+                    >
+                      Find events to join
+                    </button>
+                  </div>
+                )}
               </div>
             )}
-
             {activeTab === "Settings" && (
               <div className="text-center py-20 opacity-50">
                 <Settings size={48} className="mx-auto mb-4" />
