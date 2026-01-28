@@ -31,6 +31,7 @@ const ClubDetails = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [showEvents, setShowEvents] = useState(false);
+  const [events, setEvents] = useState([]);
 
   // Helper: Check if current user is a member
   const isMember = club?.members?.some((member) => member._id === user?._id);
@@ -43,6 +44,8 @@ const ClubDetails = () => {
         const API_URL = import.meta.env.VITE_API_URL;
         const { data } = await axios.get(`${API_URL}/api/clubs/${id}`);
         setClub(data.data);
+        const eventsRes = await axios.get(`${API_URL}/api/events/club/${id}`);
+        setEvents(eventsRes.data.data);
       } catch (err) {
         console.error(err);
         setError("Failed to load club details.");
@@ -74,6 +77,17 @@ const ClubDetails = () => {
       alert(err.response?.data?.message || "Action failed");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // refresh events after creating new one
+  const refreshEvents = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      const res = await axios.get(`${API_URL}/api/events/club/${id}`);
+      setEvents(res.data.data);
+    } catch (err) {
+      console.error("Failed to refresh events", err);
     }
   };
 
@@ -219,7 +233,7 @@ const ClubDetails = () => {
                 </div>
               </section>
 
-              {/* upcoming events (placeholder) */}
+              {/* upcoming events */}
               <section className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/50 dark:border-gray-700 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -240,40 +254,63 @@ const ClubDetails = () => {
                   )}
                 </div>
 
-                {/* Event 1 */}
-                <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl hover:bg-white/50 dark:hover:bg-gray-700/50 border border-transparent hover:border-border-light dark:hover:border-gray-600 transition-all cursor-pointer group">
-                  <div className="flex-shrink-0 w-full sm:w-32 h-32 sm:h-24 rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden relative">
-                    <img
-                      src="https://images.unsplash.com/photo-1542626991-cbc4e32524cc?auto=format&fit=crop&q=80&w=300"
-                      alt="Event"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-2 right-2 bg-white/90 px-2 py-0.5 rounded text-xs font-bold text-primary shadow-sm">
-                      OCT 25
+                {/* dynamic events list */}
+                <div className="space-y-4">
+                  {events.length > 0 ? (
+                    events.map((event) => (
+                      <div
+                        key={event._id}
+                        className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl hover:bg-white/40 dark:hover:bg-gray-700/50 border border-transparent hover:border-border-light dark:hover:border-gray-600 transition-all cursor-pointer group"
+                      >
+                        {/* Date Box */}
+                        <div className="flex-shrink-0 w-full sm:w-24 h-24 sm:h-24 rounded-lg bg-primary/10 dark:bg-primary/20 flex flex-col items-center justify-center text-primary border border-primary/20">
+                          <span className="text-xs font-bold uppercase tracking-wider">
+                            {new Date(event.date).toLocaleString("default", {
+                              month: "short",
+                            })}
+                          </span>
+                          <span className="text-2xl font-bold">
+                            {new Date(event.date).getDate()}
+                          </span>
+                        </div>
+
+                        {/* Event Content */}
+                        <div className="flex-1 flex flex-col justify-center">
+                          <h4 className="text-lg font-bold group-hover:text-primary transition-colors">
+                            {event.title}
+                          </h4>
+                          <p className="text-sm text-muted-light dark:text-muted-dark mb-2 flex items-center gap-2">
+                            <span className="flex items-center gap-1">
+                              <Clock size={14} />
+                              {new Date(event.date).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            <span className="hidden sm:inline">•</span>
+                            <span className="flex items-center gap-1">
+                              <MapPin size={14} /> {event.location}
+                            </span>
+                          </p>
+                          <p className="text-sm text-muted-light dark:text-muted-dark line-clamp-1">
+                            {event.description}
+                          </p>
+                        </div>
+
+                        {/* Register Button */}
+                        <div className="flex items-center sm:justify-end">
+                          <button className="px-4 py-2 rounded-lg border border-border-light dark:border-gray-600 text-sm font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all">
+                            Register
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    /* Empty State */
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No upcoming events scheduled.</p>
                     </div>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-lg font-bold group-hover:text-primary transition-colors">
-                      Workshop: Intro to React
-                    </h4>
-                    <p className="text-sm text-muted-light dark:text-muted-dark mb-2 flex items-center gap-2">
-                      <span className="flex items-center gap-1">
-                        <Clock size={14} /> 5:00 PM
-                      </span>{" "}
-                      •
-                      <span className="flex items-center gap-1">
-                        <MapPin size={14} /> Room 304
-                      </span>
-                    </p>
-                    <p className="text-sm text-muted-light dark:text-muted-dark line-clamp-1">
-                      Learn the basics of modern web development.
-                    </p>
-                  </div>
-                  <div className="flex items-center sm:justify-end">
-                    <button className="px-4 py-2 rounded-lg border border-border-light dark:border-gray-600 text-sm font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all">
-                      Register
-                    </button>
-                  </div>
+                  )}
                 </div>
               </section>
             </div>
@@ -397,6 +434,7 @@ const ClubDetails = () => {
           clubId={club._id} // Pass the club ID so backend knows where to put event
           onClose={() => setShowEvents(false)}
           onEventCreated={() => {
+            refreshEvents();
             alert("Event Created Successfully!");
           }}
         />
