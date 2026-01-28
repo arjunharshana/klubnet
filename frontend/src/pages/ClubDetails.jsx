@@ -17,7 +17,9 @@ import {
   CheckCircle,
   LogOut,
   Edit,
+  Plus,
 } from "lucide-react";
+import CreateEvent from "../components/CreateEvent";
 
 const ClubDetails = () => {
   const { id } = useParams();
@@ -28,6 +30,7 @@ const ClubDetails = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showEvents, setShowEvents] = useState(false);
 
   // Helper: Check if current user is a member
   const isMember = club?.members?.some((member) => member._id === user?._id);
@@ -218,11 +221,23 @@ const ClubDetails = () => {
 
               {/* upcoming events (placeholder) */}
               <section className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/50 dark:border-gray-700 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <Calendar size={20} />
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <Calendar size={20} />
+                    </div>
+                    <h3 className="text-xl font-bold">Upcoming Events</h3>
                   </div>
-                  <h3 className="text-xl font-bold">Upcoming Events</h3>
+
+                  {/* Only show this button if user is Admin */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => setShowEvents(true)}
+                      className="flex items-center gap-1 text-sm font-bold text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <Plus size={16} /> Create Event
+                    </button>
+                  )}
                 </div>
 
                 {/* Event 1 */}
@@ -376,6 +391,16 @@ const ClubDetails = () => {
           </div>
         </div>
       </main>
+      {/* create event modal */}
+      {showEvents && (
+        <CreateEvent
+          clubId={club._id} // Pass the club ID so backend knows where to put event
+          onClose={() => setShowEvents(false)}
+          onEventCreated={() => {
+            alert("Event Created Successfully!");
+          }}
+        />
+      )}
     </div>
   );
 };
