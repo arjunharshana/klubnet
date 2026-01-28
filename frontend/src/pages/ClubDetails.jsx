@@ -91,6 +91,28 @@ const ClubDetails = () => {
     }
   };
 
+  //handle rsvp to event
+  const handleRSVP = async (eventId) => {
+    if (!user) return navigate("/login");
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      await axios.put(
+        `${API_URL}/api/events/${eventId}/join`,
+        {},
+        { withCredentials: true },
+      );
+      refreshEvents();
+    } catch (error) {
+      console.error("Failed to RSVP to event", error);
+    }
+  };
+
+  // check if user has joined event
+  const hasJoinedEvent = (event) => {
+    return event.attendees.some((att) => (att._id || att) === user?._id);
+  };
+
   if (loading)
     return (
       <div className="flex h-screen items-center justify-center">
@@ -299,8 +321,24 @@ const ClubDetails = () => {
 
                         {/* Register Button */}
                         <div className="flex items-center sm:justify-end">
-                          <button className="px-4 py-2 rounded-lg border border-border-light dark:border-gray-600 text-sm font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all">
-                            Register
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent clicking the card container
+                              handleRSVP(event._id);
+                            }}
+                            className={`px-4 py-2 rounded-lg border text-sm font-bold transition-all shadow-sm ${
+                              hasJoinedEvent(event)
+                                ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" // Joined State
+                                : "bg-white dark:bg-gray-800 border-border-light dark:border-gray-600 hover:bg-primary/5 hover:text-primary hover:border-primary/30" // Default State
+                            }`}
+                          >
+                            {hasJoinedEvent(event) ? (
+                              <span className="flex items-center gap-1">
+                                <CheckCircle size={14} /> Registered
+                              </span>
+                            ) : (
+                              "Register"
+                            )}
                           </button>
                         </div>
                       </div>
