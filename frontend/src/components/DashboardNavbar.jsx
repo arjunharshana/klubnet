@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
@@ -12,6 +13,27 @@ const DashboardNavbar = () => {
   // Local state for dropdowns
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const API_URL = import.meta.env.VITE_API_URL;
+        const response = await axios.get(`${API_URL}/api/notifications`, {
+          withCredentials: true,
+        });
+        setNotifications(response.data.data);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      }
+    };
+
+    fetchNotifications();
+  }, [user]);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const handleLogout = () => {
     logout();
@@ -97,33 +119,63 @@ const DashboardNavbar = () => {
                 className="relative p-2 rounded-full hover:bg-muted-light/10 dark:hover:bg-muted-dark/10 transition-colors text-muted-light dark:text-muted-dark"
               >
                 <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full border-2 border-background-light dark:border-background-dark"></span>
+                {/* Dynamic Red Dot */}
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full border-2 border-background-light dark:border-background-dark"></span>
+                )}
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-white dark:bg-gray-800 border border-border-light dark:border-gray-700 shadow-xl overflow-hidden">
-                  <div className="p-4 border-b border-border-light dark:border-gray-700">
+                <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-white dark:bg-gray-800 border border-border-light dark:border-gray-700 shadow-xl overflow-hidden z-50">
+                  <div className="p-4 border-b border-border-light dark:border-gray-700 flex justify-between items-center">
                     <h3 className="font-bold text-sm text-foreground-light dark:text-foreground-dark">
                       Notifications
                     </h3>
+                    {unreadCount > 0 && (
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
+                        {unreadCount} New
+                      </span>
+                    )}
                   </div>
-                  <div className="max-h-64 overflow-y-auto p-2">
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg cursor-pointer flex gap-3 items-start"
-                      >
-                        <div className="size-2 mt-2 rounded-full bg-primary shrink-0"></div>
-                        <div>
-                          <p className="text-sm font-medium leading-tight text-foreground-light dark:text-foreground-dark">
-                            New Event in Coding Club
-                          </p>
-                          <p className="text-xs text-muted-light dark:text-muted-dark mt-1">
-                            2 hours ago
-                          </p>
+
+                  <div className="max-h-64 overflow-y-auto p-0">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => (
+                        <div
+                          key={n._id}
+                          className={`p-3 border-b border-border-light/50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer flex gap-3 items-start ${
+                            !n.isRead ? "bg-primary/5" : ""
+                          }`}
+                          onClick={() => {
+                            // Mark as read and navigate if link exists
+                            if (n.link) navigate(n.link);
+                            setShowNotifications(false);
+                          }}
+                        >
+                          <div
+                            className={`size-2 mt-2 rounded-full shrink-0 ${!n.isRead ? "bg-primary" : "bg-gray-300"}`}
+                          ></div>
+                          <div>
+                            <p
+                              className={`text-sm leading-tight text-foreground-light dark:text-foreground-dark ${!n.isRead ? "font-bold" : "font-medium"}`}
+                            >
+                              {n.message}
+                            </p>
+                            <p className="text-xs text-muted-light dark:text-muted-dark mt-1">
+                              {new Date(n.createdAt).toLocaleDateString()} •{" "}
+                              {new Date(n.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center text-muted-light dark:text-muted-dark text-sm">
+                        No notifications yet.
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}
