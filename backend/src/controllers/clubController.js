@@ -3,6 +3,7 @@ const User = require("../models/user");
 const asynchandler = require("express-async-handler");
 const cloudinary = require("../config/cloudinary");
 const fs = require("fs");
+const { createNotification } = require("./notificationController");
 
 const createClub = async (req, res) => {
   try {
@@ -95,31 +96,40 @@ const getAllClubs = async (req, res) => {
   }
 };
 
-const getClubs = async (req, res) => {
-  try {
-    const { category, search } = req.query;
-    let query = {};
+const joinClub = asynchandler(async (req, res) => {
+  const club = await Club.findById(req.params.id);
 
-    if (category) {
-      query.category = category;
-    }
-
-    if (search) {
-      query.name = { $regex: search, $options: "i" };
-    }
-
-    const clubs = await Club.find(query)
-      .populate("admin", "username email")
-      .populate("members", "username email")
-      .populate("followers", "username email")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json(clubs);
-  } catch (error) {
-    console.error("Error fetching clubs:", error);
-    res.status(500).json({ message: "Server error while fetching clubs." });
+  if (!club) {
+    res.status(404);
+    throw new Error("Club not found");
   }
-};
+
+  // Check if user is already a member
+  if (club.members.includes(req.user.id)) {
+    //leave logic
+    club.members = club.members.filter(
+      (memberId) => memberId.toString() !== req.user.id,
+    );
+    await club.save();
+    return res.status(200).json({ success: true, data: club });
+  } else {
+    // join logic
+    club.members.push(req.user.id);
+    await club.save();
+
+    //notify club admin
+    if (club.admin.toString() !== req.user.id) {
+      await createNotification(
+        club.admin,
+        `${req.user.name} joined your club "${club.name}"`,
+        "club_join",
+        `/clubs/${club._id}`,
+      );
+    }
+
+    res.status(200).json({ success: true, data: club }); // User joined
+  }
+});
 
 const deleteClub = async (req, res) => {
   try {
@@ -143,9 +153,27 @@ const deleteClub = async (req, res) => {
   }
 };
 
+const getClubById = async (req, res) => {
+  try {
+    const club = await Club.findById(req.params.id)
+      .populate("admin", "name email image")
+      .populate("members", "name email image");
+
+    if (!club) {
+      return res.status(404).json({ message: "Club not found" });
+    }
+
+    res.status(200).json({ success: true, data: club });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
 module.exports = {
   createClub,
   getAllClubs,
-  getClubs,
+  getClubById,
+  joinClub,
   deleteClub,
 };

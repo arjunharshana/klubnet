@@ -65,10 +65,8 @@ const ClubDetails = () => {
 
     try {
       const API_URL = import.meta.env.VITE_API_URL;
-      const endpoint = isMember ? "leave" : "join";
-
       const { data } = await axios.put(
-        `${API_URL}/api/clubs/${id}/${endpoint}`,
+        `${API_URL}/api/clubs/${id}/join}`,
         {},
         { withCredentials: true },
       );
