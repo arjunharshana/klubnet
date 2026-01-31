@@ -38,12 +38,14 @@ const Explore = () => {
         const API_URL = import.meta.env.VITE_API_URL;
 
         // Build query params
-        const params = {};
-        if (search) params.search = search;
-        if (category !== "All") params.category = category;
+        const params = new URLSearchParams();
+        if (search) params.append("search", search);
+        if (category && category !== "All") params.append("category", category);
 
-        const { data } = await axios.get(`${API_URL}/api/clubs`, { params });
-        setClubs(data.data || []);
+        const { data } = await axios.get(
+          `${API_URL}/api/clubs?${params.toString()}`,
+        );
+        setClubs(data.data);
       } catch (error) {
         console.error("Failed to fetch clubs:", error);
       } finally {
@@ -93,9 +95,9 @@ const Explore = () => {
             </div>
             <input
               value={search}
+              placeholder="Search for clubs"
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-11 pr-4 py-4 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark rounded-2xl text-foreground-light dark:text-foreground-dark placeholder-muted-light/70 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm outline-none transition-all text-base hover:shadow-md"
-              placeholder="Search for clubs (e.g. 'Chess', 'Robotics')..."
               type="text"
             />
           </div>

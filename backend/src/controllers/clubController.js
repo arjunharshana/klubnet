@@ -56,9 +56,27 @@ const createClub = async (req, res) => {
   }
 };
 
+function escapeRegex(text) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+}
+
 const getAllClubs = async (req, res) => {
   try {
-    const query = req.query.category ? { category: req.query.category } : {};
+    let query = {};
+
+    if (req.query.search) {
+      const searchString = String(req.query.search);
+      const regex = new RegExp(escapeRegex(searchString), "gi");
+
+      query = {
+        ...query,
+        $or: [{ name: regex }, { description: regex }],
+      };
+    }
+
+    if (req.query.category && req.query.category !== "All") {
+      query.category = String(req.query.category);
+    }
 
     const clubs = await Club.find(query)
       .populate("admin", "username email")
