@@ -6,7 +6,7 @@ const getNotifications = asynchandler(async (req, res) => {
     createdAt: -1,
   });
   res.status(200).json({ data: notifications });
-}
+});
 
 const markAsRead = asynchandler(async (req, res) => {
   const notification = await Notification.findById(req.params.id);

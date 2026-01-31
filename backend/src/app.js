@@ -6,6 +6,7 @@ const helmet = require("helmet");
 const userRoutes = require("./routes/userRoutes");
 const clubRoutes = require("./routes/clubRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 dotenv.config();
 
@@ -30,7 +31,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use("/api/clubs", clubRoutes);
 app.use("/api/events", eventRoutes);
-
+app.use("/api/notifications", notificationRoutes);
 app.use((req, res, next) => {
   res.status(404).json({ message: "Route not found" });
 
