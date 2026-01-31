@@ -19,4 +19,13 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = { authMiddleware };
+const superAdmin = (req, res, next) => {
+  if (req.user && req.user.roles === "superadmin") {
+    next();
+  } else {
+    res.status(401);
+    throw new Error("Not authorized as superadmin");
+  }
+};
+
+module.exports = { authMiddleware, superAdmin };

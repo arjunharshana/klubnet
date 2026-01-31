@@ -46,10 +46,12 @@ const createClub = async (req, res) => {
       image: imageUrl,
       admin: adminId,
       members: [adminId],
+      isApproved: false,
     });
 
     res.status(201).json({
-      message: "Club created successfully",
+      message: "Club created successfully! Pending approval by the superadmin",
+      data: club,
     });
   } catch (error) {
     console.error("Error creating club:", error);
@@ -63,7 +65,7 @@ function escapeRegex(text) {
 
 const getAllClubs = async (req, res) => {
   try {
-    let query = {};
+    let query = { isApproved: true };
 
     if (req.query.search) {
       const searchString = String(req.query.search);
@@ -170,10 +172,55 @@ const getClubById = async (req, res) => {
   }
 };
 
+//superadmin functions
+const getPendingClubs = asynchandler(async (req, res) => {
+  const clubs = await Club.find({ isApproved: false }).populate(
+    "admin",
+    "name email",
+  );
+  res.status(200).json({ success: true, data: clubs });
+});
+
+const approveClub = asynchandler(async (req, res) => {
+  const club = await Club.findById(req.params.id);
+  if (!club) {
+    res.status(404);
+    throw new Error("Club not found");
+  }
+
+  club.isApproved = true;
+  await club.save();
+
+  // Notify the Club Owner
+  await createNotification(
+    club.admin,
+    `Great news! Your club "${club.name}" has been approved.`,
+    "info",
+    `/clubs/${club._id}`,
+  );
+
+  res.status(200).json({ success: true, data: club });
+});
+
+const rejectClub = asynchandler(async (req, res) => {
+  const club = await Club.findById(req.params.id);
+  if (!club) {
+    res.status(404);
+    throw new Error("Club not found");
+  }
+
+  //we will just delete the club for now
+  await club.deleteOne();
+  res.status(200).json({ success: true, message: "Club rejected" });
+});
+
 module.exports = {
   createClub,
   getAllClubs,
   getClubById,
   joinClub,
   deleteClub,
+  getPendingClubs,
+  approveClub,
+  rejectClub,
 };

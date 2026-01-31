@@ -40,12 +40,16 @@ const clubSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    isApproved: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
     toJSOn: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 const Club = mongoose.model("Club", clubSchema);

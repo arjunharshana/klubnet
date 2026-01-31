@@ -17,11 +17,12 @@ const CreateClub = () => {
   // 2. Image State (File + Preview URL)
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(
-    "https://via.placeholder.com/400x300?text=No+Image"
+    "https://via.placeholder.com/400x300?text=No+Image",
   );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -58,7 +59,7 @@ const CreateClub = () => {
         withCredentials: true,
       });
 
-      navigate("/dashboard");
+      setSubmitted(true);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to create club");
@@ -66,6 +67,41 @@ const CreateClub = () => {
       setLoading(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display">
+        <DashboardNavbar />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-xl border border-gray-100 dark:border-gray-700">
+            <div className="size-20 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="material-symbols-outlined text-4xl">
+                check_circle
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold text-foreground-light dark:text-foreground-dark mb-2">
+              Application Submitted!
+            </h2>
+            <p className="text-muted-light dark:text-muted-dark mb-8">
+              Your club <strong>{formData.name}</strong> has been created. It is
+              currently
+              <span className="font-bold text-orange-500">
+                {" "}
+                Pending Approval
+              </span>
+              . An admin will review it shortly.
+            </p>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-all"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark transition-colors duration-300">
