@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
   X,
@@ -10,7 +10,12 @@ import {
   Loader,
 } from "lucide-react";
 
-const CreateEvent = ({ clubId, onClose, onEventCreated }) => {
+const CreateEvent = ({
+  clubId,
+  onClose,
+  onEventCreated,
+  eventToEdit = null,
+}) => {
   const [formData, setFormData] = useState({
     title: "",
     date: "",
@@ -20,6 +25,25 @@ const CreateEvent = ({ clubId, onClose, onEventCreated }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const isEditMode = !!eventToEdit;
+
+  // Pre-fill form if editing
+  useEffect(() => {
+    if (eventToEdit) {
+      const dateObj = new Date(eventToEdit.date);
+      const dateStr = dateObj.toISOString().split("T")[0];
+      const timeStr = dateObj.toTimeString().slice(0, 5);
+
+      setFormData({
+        title: eventToEdit.title,
+        date: dateStr,
+        time: timeStr,
+        location: eventToEdit.location,
+        description: eventToEdit.description,
+      });
+    }
+  }, [eventToEdit]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -43,9 +67,16 @@ const CreateEvent = ({ clubId, onClose, onEventCreated }) => {
       };
 
       const API_URL = import.meta.env.VITE_API_URL;
-      await axios.post(`${API_URL}/api/events`, payload, {
-        withCredentials: true,
-      });
+      if (isEditMode) {
+        // update existing event
+        await axios.put(`${API_URL}/api/events/${eventToEdit._id}`, payload, {
+          withCredentials: true,
+        });
+      } else {
+        await axios.post(`${API_URL}/api/events`, payload, {
+          withCredentials: true,
+        });
+      }
 
       onEventCreated(); // Refresh the list
       onClose();

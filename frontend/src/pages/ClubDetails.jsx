@@ -18,6 +18,7 @@ import {
   LogOut,
   Edit,
   Plus,
+  Trash2,
 } from "lucide-react";
 import CreateEvent from "../components/CreateEvent";
 
@@ -32,6 +33,7 @@ const ClubDetails = () => {
   const [error, setError] = useState("");
   const [showEvents, setShowEvents] = useState(false);
   const [events, setEvents] = useState([]);
+  const [editingEvent, setEditingEvent] = useState(null);
 
   // Helper: Check if current user is a member
   const isMember = club?.members?.some((member) => member._id === user?._id);
@@ -106,6 +108,39 @@ const ClubDetails = () => {
     } catch (error) {
       console.error("Failed to RSVP to event", error);
     }
+  };
+
+  //handle delete event
+  const handleDeleteEvent = async (eventId) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this event? This cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      await axios.delete(`${API_URL}/api/events/${eventId}`, {
+        withCredentials: true,
+      });
+      refreshEvents();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete event");
+    }
+  };
+
+  //handle edit event
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+    setShowEvents(true);
+  };
+
+  const openCreateModal = () => {
+    setShowEvents(true);
+    setEditingEvent(null);
   };
 
   // check if user has joined event
@@ -268,7 +303,7 @@ const ClubDetails = () => {
                   {/* Only show this button if user is Admin */}
                   {isAdmin && (
                     <button
-                      onClick={() => setShowEvents(true)}
+                      onClick={openCreateModal}
                       className="flex items-center gap-1 text-sm font-bold text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
                     >
                       <Plus size={16} /> Create Event
@@ -301,6 +336,30 @@ const ClubDetails = () => {
                           <h4 className="text-lg font-bold group-hover:text-primary transition-colors">
                             {event.title}
                           </h4>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditEvent(event);
+                                }}
+                                className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit Event"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteEvent(event._id);
+                                }}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete Event"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          )}
                           <p className="text-sm text-muted-light dark:text-muted-dark mb-2 flex items-center gap-2">
                             <span className="flex items-center gap-1">
                               <Clock size={14} />
@@ -471,8 +530,10 @@ const ClubDetails = () => {
         <CreateEvent
           clubId={club._id} // Pass the club ID so backend knows where to put event
           onClose={() => setShowEvents(false)}
+          eventToEdit={editingEvent}
           onEventCreated={() => {
             refreshEvents();
+            setShowEvents(false);
             alert("Event Created Successfully!");
           }}
         />
