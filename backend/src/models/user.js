@@ -37,10 +37,15 @@ const userSchema = new mongoose.Schema(
     passwordResetTokenExpiry: {
       type: Date,
     },
+    roles: {
+      type: [String],
+      enum: ["user", "admin", "superadmin"],
+      default: ["user"],
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Hash password
