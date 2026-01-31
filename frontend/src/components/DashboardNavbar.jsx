@@ -54,6 +54,33 @@ const DashboardNavbar = () => {
       : "text-muted-light dark:text-muted-dark font-medium hover:text-primary transition-colors";
   };
 
+  const handleNotificationClick = async (notification) => {
+    setShowNotifications(false);
+
+    if (notification.link) navigate(notification.link);
+
+    // If already read, do nothing
+    if (notification.isRead) return;
+
+    // mark as read in backend
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      await axios.put(
+        `${API_URL}/api/notifications/${notification._id}/read`,
+        {},
+        { withCredentials: true },
+      );
+
+      // update local state
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n._id === notification._id ? { ...n, isRead: true } : n,
+        ),
+      );
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
   return (
     <>
       {/* */}
@@ -147,9 +174,7 @@ const DashboardNavbar = () => {
                             !n.isRead ? "bg-primary/5" : ""
                           }`}
                           onClick={() => {
-                            // Mark as read and navigate if link exists
-                            if (n.link) navigate(n.link);
-                            setShowNotifications(false);
+                            handleNotificationClick(n);
                           }}
                         >
                           <div
