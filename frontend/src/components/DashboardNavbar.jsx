@@ -247,6 +247,14 @@ const DashboardNavbar = () => {
                     >
                       <User size={16} /> Profile
                     </Link>
+                    {user?.role === "superadmin" && (
+                      <Link
+                        to="/super-admin"
+                        className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 text-purple-600 dark:text-purple-400 transition-colors"
+                      >
+                        <Shield size={16} /> Admin Console
+                      </Link>
+                    )}
                     <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left text-foreground-light dark:text-foreground-dark">
                       <Settings size={16} /> Settings
                     </button>
