@@ -9,7 +9,6 @@ import {
   Grid,
   Calendar,
   Search,
-  Filter,
   ArrowRight,
   Megaphone,
   Clock,
@@ -25,28 +24,33 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("My Clubs");
   const [search, setSearch] = useState("");
+  const [sortOption, setSortOption] = useState("Most Active");
   const [myEvents, setMyEvents] = useState([]);
 
-  // 1. Fetch User's Joined Clubs
+  // fetch joined clubs and events
   useEffect(() => {
     const fetchJoinedClubs = async () => {
       try {
         const API_URL = import.meta.env.VITE_API_URL;
-        const { data } = await axios.get(`${API_URL}/api/clubs`);
+
+        // Parallel fetching for speed
+        const [clubsRes, eventsRes] = await Promise.all([
+          axios.get(`${API_URL}/api/clubs`),
+          axios.get(`${API_URL}/api/events/myevents`, {
+            withCredentials: true,
+          }),
+        ]);
 
         if (user) {
-          const joined = data.data.filter((club) =>
+          // Filter clubs
+          const joined = clubsRes.data.data.filter((club) =>
             club.members.some((member) => member._id === user._id),
           );
           setMyClubs(joined);
-
-          const eventRes = await axios.get(`${API_URL}/api/events/myevents`, {
-            withCredentials: true,
-          });
-          setMyEvents(eventRes.data.data);
+          setMyEvents(eventsRes.data.data);
         }
       } catch (err) {
-        console.error("Failed to fetch clubs", err);
+        console.error("Failed to fetch profile data", err);
       } finally {
         setLoading(false);
       }
@@ -58,6 +62,28 @@ const Profile = () => {
   // Helper to determine role
   const getRole = (club) => {
     return club.admin?._id === user?._id ? "Admin" : "Member";
+  };
+
+  // sorting function
+  const getSortedClubs = () => {
+    let filtered = myClubs.filter((c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()),
+    );
+
+    switch (sortOption) {
+      case "A-Z":
+        return filtered.sort((a, b) => a.name.localeCompare(b.name));
+      case "Role":
+        // Admins first
+        return filtered.sort((a, b) => {
+          const roleA = getRole(a);
+          const roleB = getRole(b);
+          if (roleA === roleB) return 0;
+          return roleA === "Admin" ? -1 : 1;
+        });
+      default: // most active
+        return filtered;
+    }
   };
 
   return (
@@ -74,8 +100,17 @@ const Profile = () => {
 
               {/* Avatar */}
               <div className="relative z-10 mb-4">
-                <div className="h-32 w-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md bg-gradient-to-br from-purple-400 to-primary flex items-center justify-center text-4xl text-white font-bold">
-                  {user?.name?.charAt(0).toUpperCase()}
+                <div className="h-32 w-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md bg-gradient-to-br from-purple-400 to-primary flex items-center justify-center text-4xl text-white font-bold overflow-hidden">
+                  {/* Show Image if available, else Initial */}
+                  {user?.image ? (
+                    <img
+                      src={user.image}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    user?.name?.charAt(0).toUpperCase()
+                  )}
                 </div>
                 <div
                   className="absolute bottom-1 right-1 bg-green-500 border-2 border-white dark:border-gray-800 size-5 rounded-full"
@@ -83,7 +118,7 @@ const Profile = () => {
                 ></div>
               </div>
 
-              {/* User Info */}
+              {/* user info */}
               <h1 className="text-2xl font-bold mb-1">{user?.name}</h1>
               <p className="text-primary font-medium bg-primary/5 px-3 py-1 rounded-full text-sm mb-6">
                 {user?.email}
@@ -98,15 +133,18 @@ const Profile = () => {
                   </span>
                 </div>
                 <div className="flex flex-col items-center p-3 rounded-xl bg-white/50 dark:bg-gray-700/50 border border-white/60 dark:border-gray-600">
-                  <span className="text-2xl font-bold">0</span>
+                  <span className="text-2xl font-bold">{myEvents.length}</span>
                   <span className="text-xs text-muted-light dark:text-muted-dark uppercase tracking-wide font-semibold">
                     Events
                   </span>
                 </div>
               </div>
 
-              {/* Edit Button */}
-              <button className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 font-bold py-2.5 px-4 rounded-xl border border-gray-200 dark:border-gray-600 transition-all shadow-sm mb-6">
+              {/* edit button */}
+              <button
+                onClick={() => setActiveTab("Settings")}
+                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 font-bold py-2.5 px-4 rounded-xl border border-gray-200 dark:border-gray-600 transition-all shadow-sm mb-6"
+              >
                 <Edit size={18} />
                 <span>Edit Profile</span>
               </button>
@@ -123,7 +161,7 @@ const Profile = () => {
                   myEvents.slice(0, 3).map((event) => (
                     <div
                       key={event._id}
-                      className="flex gap-3 items-start cursor-pointer hover:bg-white/50 p-2 rounded-lg transition-colors"
+                      className="flex gap-3 items-start cursor-pointer hover:bg-white/50 dark:hover:bg-gray-700/30 p-2 rounded-lg transition-colors"
                       onClick={() => navigate(`/clubs/${event.club._id}`)}
                     >
                       {/* Date Box */}
@@ -146,8 +184,7 @@ const Profile = () => {
                           {new Date(event.date).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
-                          })}{" "}
-                          • {event.location}
+                          })}
                         </p>
                       </div>
                     </div>
@@ -163,7 +200,7 @@ const Profile = () => {
             </div>
           </aside>
 
-          {/* tabs and clubs */}
+          {/* tabs and content */}
           <section className="lg:col-span-8 flex flex-col h-full">
             {/* Tab Navigation */}
             <div className="mb-6 space-y-4">
@@ -186,107 +223,89 @@ const Profile = () => {
                 ))}
               </div>
 
-              {/* search */}
-              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="relative w-full sm:w-auto flex-grow max-w-md">
-                  <Search
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    size={20}
-                  />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search your clubs..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-white/60 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-medium placeholder:text-gray-400 shadow-sm backdrop-blur-sm"
-                  />
-                </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <span className="text-sm font-medium text-muted-light dark:text-muted-dark whitespace-nowrap">
-                    Sort by:
-                  </span>
-                  <div className="relative w-full sm:w-40">
-                    <select className="w-full appearance-none bg-white/60 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-sm font-bold py-2.5 pl-3 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer shadow-sm">
-                      <option>Most Active</option>
-                      <option>Role</option>
-                      <option>A-Z</option>
-                    </select>
+              {/* search & sort */}
+              {activeTab === "My Clubs" && (
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                  <div className="relative w-full sm:w-auto flex-grow max-w-md">
+                    <Search
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={20}
+                    />
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search your clubs..."
+                      className="w-full pl-10 pr-4 py-2.5 bg-white/60 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-medium placeholder:text-gray-400 shadow-sm backdrop-blur-sm dark:text-white"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <span className="text-sm font-medium text-muted-light dark:text-muted-dark whitespace-nowrap">
+                      Sort by:
+                    </span>
+                    <div className="relative w-full sm:w-40">
+                      <select
+                        value={sortOption}
+                        onChange={(e) => setSortOption(e.target.value)}
+                        className="w-full appearance-none bg-white/60 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-sm font-bold py-2.5 pl-3 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer shadow-sm dark:text-white"
+                      >
+                        <option value="Most Active">Most Active</option>
+                        <option value="Role">Role (Admin First)</option>
+                        <option value="A-Z">A-Z</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Content Area */}
+            {/* tab content */}
+
+            {/* my clubs */}
             {activeTab === "My Clubs" && (
               <div className="flex flex-col gap-4">
                 {loading ? (
-                  <p>Loading clubs...</p>
-                ) : myClubs.length > 0 ? (
-                  myClubs
-                    .filter((c) =>
-                      c.name.toLowerCase().includes(search.toLowerCase()),
-                    )
-                    .map((club) => (
-                      <article
-                        key={club._id}
-                        className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-5 flex flex-col md:flex-row gap-5 items-start border border-white/50 dark:border-gray-700 shadow-sm hover:shadow-md transition-all"
-                      >
-                        {/* Logo */}
-                        <div className="flex-shrink-0">
-                          <div
-                            className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-700 bg-center bg-cover shadow-inner"
-                            style={{
-                              backgroundImage: `url(${club.image || "https://via.placeholder.com/150"})`,
-                            }}
-                          ></div>
-                        </div>
+                  <p className="text-center py-10 opacity-60">
+                    Loading clubs...
+                  </p>
+                ) : getSortedClubs().length > 0 ? (
+                  getSortedClubs().map((club) => (
+                    <article
+                      key={club._id}
+                      className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-5 flex flex-col md:flex-row gap-5 items-start border border-white/50 dark:border-gray-700 shadow-sm hover:shadow-md transition-all"
+                    >
+                      {/* Logo */}
+                      <div className="flex-shrink-0">
+                        <div
+                          className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-700 bg-center bg-cover shadow-inner"
+                          style={{
+                            backgroundImage: `url(${club.image || "https://via.placeholder.com/150"})`,
+                          }}
+                        ></div>
+                      </div>
 
-                        {/* Info */}
-                        <div className="flex-grow min-w-0 w-full">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-3">
-                              <h3 className="text-lg font-bold">{club.name}</h3>
-                              <span
-                                className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide ${
-                                  getRole(club) === "President"
-                                    ? "bg-primary/10 text-primary"
-                                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                                }`}
-                              >
-                                {getRole(club)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-light dark:text-muted-dark bg-white/50 dark:bg-gray-700/50 px-2 py-1 rounded-lg self-start sm:self-auto">
-                              <Clock size={16} />
-                              <span>Next: TBD</span>
-                            </div>
-                          </div>
-
-                          <p className="text-muted-light dark:text-muted-dark text-sm mb-3 line-clamp-1">
-                            {club.description}
-                          </p>
-
-                          {/* announcements */}
-                          <div className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 border border-gray-100 dark:border-gray-600 rounded-lg p-3 relative">
-                            <div className="flex items-start gap-2.5">
-                              <Megaphone
-                                className="text-primary mt-0.5"
-                                size={18}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold mb-0.5">
-                                  Latest Announcement
-                                </p>
-                                <p className="text-sm text-muted-light dark:text-muted-dark leading-relaxed truncate">
-                                  Welcome to the club! Check the calendar for
-                                  upcoming events.
-                                </p>
-                              </div>
-                            </div>
+                      {/* Info */}
+                      <div className="flex-grow min-w-0 w-full">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-lg font-bold">{club.name}</h3>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide ${
+                                getRole(club) === "Admin"
+                                  ? "bg-primary/10 text-primary"
+                                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                              }`}
+                            >
+                              {getRole(club)}
+                            </span>
                           </div>
                         </div>
 
-                        {/* action button */}
+                        <p className="text-muted-light dark:text-muted-dark text-sm mb-3 line-clamp-1">
+                          {club.description}
+                        </p>
+
+                        {/* Action */}
                         <div className="flex-shrink-0 self-end md:self-center mt-2 md:mt-0 w-full md:w-auto">
                           <button
                             onClick={() => navigate(`/clubs/${club._id}`)}
@@ -295,8 +314,9 @@ const Profile = () => {
                             View Club <ArrowRight size={16} />
                           </button>
                         </div>
-                      </article>
-                    ))
+                      </div>
+                    </article>
+                  ))
                 ) : (
                   <div className="text-center py-10 opacity-60">
                     <Grid size={48} className="mx-auto mb-2" />
@@ -312,6 +332,7 @@ const Profile = () => {
               </div>
             )}
 
+            {/* events */}
             {activeTab === "Events" && (
               <div className="flex flex-col gap-4">
                 {myEvents.length > 0 ? (
@@ -355,11 +376,6 @@ const Profile = () => {
                           Hosted by {event.club?.name}
                         </p>
                       </div>
-
-                      {/* Action */}
-                      <button className="flex-shrink-0 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-bold shadow-sm">
-                        View Details
-                      </button>
                     </div>
                   ))
                 ) : (
@@ -378,10 +394,20 @@ const Profile = () => {
                 )}
               </div>
             )}
+
+            {/*settings tab */}
             {activeTab === "Settings" && (
-              <div className="text-center py-20 opacity-50">
-                <Settings size={48} className="mx-auto mb-4" />
-                <p className="font-bold">Profile Settings Coming Soon</p>
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-8 border border-white/50 dark:border-gray-700 shadow-sm text-center">
+                {/* Settings Icon */}
+                <Settings
+                  size={48}
+                  className="mx-auto mb-4 text-gray-300 dark:text-gray-600"
+                />
+                <h3 className="text-xl font-bold mb-2">Profile Settings</h3>
+                <p className="text-muted-light dark:text-muted-dark">
+                  Manage your profile information, privacy settings, and account
+                  preferences here.
+                </p>
               </div>
             )}
           </section>
