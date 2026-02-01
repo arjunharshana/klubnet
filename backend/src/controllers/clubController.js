@@ -209,6 +209,12 @@ const rejectClub = asynchandler(async (req, res) => {
     throw new Error("Club not found");
   }
 
+  await createNotification(
+    club.admin,
+    `We regret to inform you that your club "${club.name}" has been rejected.`,
+    "alert",
+  );
+
   //we will just delete the club for now
   await club.deleteOne();
   res.status(200).json({ success: true, message: "Club rejected" });
