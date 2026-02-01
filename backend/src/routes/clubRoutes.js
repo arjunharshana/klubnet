@@ -12,6 +12,7 @@ const {
   getPendingClubs,
   approveClub,
   rejectClub,
+  getSystemStats,
 } = require("../controllers/clubController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 const { rateLimiter } = require("../middleware/rateLimiter");
@@ -31,6 +32,7 @@ router.delete("/:id", authMiddleware, deleteClub);
 
 // Superadmin routes
 router.get("/admin/pending", authMiddleware, superAdmin, getPendingClubs);
+router.get("/admin/stats", authMiddleware, superAdmin, getSystemStats);
 router.put("/:id/approve", authMiddleware, superAdmin, approveClub);
 router.delete("/:id/reject", authMiddleware, superAdmin, rejectClub);
 

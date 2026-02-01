@@ -214,6 +214,28 @@ const rejectClub = asynchandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Club rejected" });
 });
 
+const getSystemStats = async (req, res) => {
+  try {
+    const [totalClubs, totalUsers, pendingClubs] = await Promise.all([
+      Club.countDocuments({ isApproved: true }),
+      User.countDocuments({}),
+      Club.countDocuments({ isApproved: false }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalClubs,
+        totalUsers,
+        pendingClubs,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching system stats:", error);
+    res.status(500).json({ message: "Server error while fetching stats." });
+  }
+};
+
 module.exports = {
   createClub,
   getAllClubs,
@@ -223,4 +245,5 @@ module.exports = {
   getPendingClubs,
   approveClub,
   rejectClub,
+  getSystemStats,
 };

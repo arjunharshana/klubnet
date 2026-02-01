@@ -8,6 +8,8 @@ import Explore from "./pages/Explore.jsx";
 import CreateClub from "./pages/CreateClub.jsx";
 import ClubDetails from "./pages/ClubDetails.jsx";
 import Profile from "./pages/Profile.jsx";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard.jsx";
+import SuperAdminRoute from "./components/SuperAdminRoute.jsx";
 
 function NotFound() {
   return (
@@ -36,6 +38,9 @@ function App() {
         <Route path="/create-club" element={<CreateClub />} />
         <Route path="/clubs/:id" element={<ClubDetails />} />
         <Route path="/profile" element={<Profile />} />
+        <Route element={<SuperAdminRoute />}>
+          <Route path="/super-admin" element={<SuperAdminDashboard />} />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
