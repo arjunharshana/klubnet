@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../hooks/useAuth.js";
 import Navbar from "../components/Navbar.jsx";
+import ForgotPassword from "./ForgotPassword.jsx";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ function LoginPage() {
           email: trimmedEmail,
           password: formData.password,
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       login(response.data);
@@ -55,7 +56,7 @@ function LoginPage() {
       navigate("/");
     } catch (err) {
       setError(
-        err.response?.data?.message || "Login failed. Please try again."
+        err.response?.data?.message || "Login failed. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -143,7 +144,7 @@ function LoginPage() {
                 {/* Forgot Password Link */}
                 <div className="flex items-center justify-end">
                   <Link
-                    to="#"
+                    to="/forgot-password"
                     className="text-sm font-medium text-primary hover:underline"
                   >
                     Forgot Password?

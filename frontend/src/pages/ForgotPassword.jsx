@@ -8,6 +8,7 @@ import {
   CheckCircle,
   AlertTriangle,
 } from "lucide-react";
+import Navbar from "../components/Navbar.jsx";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -34,17 +35,8 @@ const ForgotPassword = () => {
 
   return (
     <div className="relative flex h-full min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display overflow-x-hidden transition-colors duration-300">
-      {/* Navbar Placeholder */}
-      <header className="flex items-center justify-between whitespace-nowrap px-10 py-4 w-full absolute top-0 z-10">
-        <div className="flex items-center gap-3 text-[#161118] dark:text-white">
-          <div className="size-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-            <span className="material-symbols-outlined text-xl">groups</span>
-          </div>
-          <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">
-            KlubNet
-          </h2>
-        </div>
-      </header>
+      {/* Navbar */}
+      <Navbar />
 
       {/* Main Content Area */}
       <main className="flex-1 flex items-center justify-center px-4 py-20 relative">

@@ -44,7 +44,7 @@ router.post(
   "/reset-password",
   validatePasswordReset,
   authRateLimiter,
-  resetPassword
+  resetPassword,
 );
 
 router.get("/profile", authMiddleware, rateLimiter, getUserProfile);
