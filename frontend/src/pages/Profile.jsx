@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import DashboardNavbar from "../components/DashboardNavbar";
+import ProfileSettings from "../components/ProfileSettings";
 import {
   Edit,
   MapPin,
@@ -397,17 +398,9 @@ const Profile = () => {
 
             {/*settings tab */}
             {activeTab === "Settings" && (
-              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-8 border border-white/50 dark:border-gray-700 shadow-sm text-center">
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-8 border border-white/50 dark:border-gray-700 shadow-sm text-just">
                 {/* Settings Icon */}
-                <Settings
-                  size={48}
-                  className="mx-auto mb-4 text-gray-300 dark:text-gray-600"
-                />
-                <h3 className="text-xl font-bold mb-2">Profile Settings</h3>
-                <p className="text-muted-light dark:text-muted-dark">
-                  Manage your profile information, privacy settings, and account
-                  preferences here.
-                </p>
+                <ProfileSettings />
               </div>
             )}
           </section>

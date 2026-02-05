@@ -10,6 +10,8 @@ import ClubDetails from "./pages/ClubDetails.jsx";
 import Profile from "./pages/Profile.jsx";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard.jsx";
 import SuperAdminRoute from "./components/SuperAdminRoute.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
 
 function NotFound() {
   return (
@@ -38,6 +40,8 @@ function App() {
         <Route path="/create-club" element={<CreateClub />} />
         <Route path="/clubs/:id" element={<ClubDetails />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route element={<SuperAdminRoute />}>
           <Route path="/super-admin" element={<SuperAdminDashboard />} />
         </Route>
