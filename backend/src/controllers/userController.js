@@ -5,6 +5,7 @@ const {
   sendPasswordResetEmail,
 } = require("../utils/sendEmail");
 const crypto = require("crypto");
+const cloudinary = require("../config/cloudinary");
 
 // Register a new user
 const registerUser = async (req, res) => {
@@ -237,6 +238,59 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// update profile
+const updateUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    res.status(400);
+    throw new Error("User not found");
+  }
+
+  user.bio = req.body.bio || user.bio;
+  user.major = req.body.major || user.major;
+  user.year = req.body.year || user.year;
+  user.socials = {
+    linkedin: req.body.linkedin || user.socials?.linkedin,
+    github: req.body.github || user.socials?.github,
+  };
+
+  // handle image upload
+  if (req.file) {
+    try {
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "klubnet/users",
+        width: 300,
+        crop: "scale",
+      });
+
+      user.image = result.secure_url;
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      res.status(500);
+      throw new Error("Image upload failed");
+    }
+  }
+
+  const updatedUser = await user.save();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      image: updatedUser.image,
+      role: updatedUser.roles,
+      bio: updatedUser.bio,
+      major: updatedUser.major,
+      year: updatedUser.year,
+      socials: updatedUser.socials,
+    },
+  });
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -246,4 +300,5 @@ module.exports = {
   logoutUser,
   forgotPassword,
   resetPassword,
+  updateUserProfile,
 };

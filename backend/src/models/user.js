@@ -42,6 +42,24 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin", "superadmin"],
       default: ["user"],
     },
+    image: {
+      type: String,
+      default: "",
+    },
+    bio: {
+      type: String,
+      maxLength: 300,
+    },
+    major: {
+      type: String,
+    },
+    year: {
+      type: String,
+    },
+    socials: {
+      linkedin: { type: String, default: "" },
+      github: { type: String, default: "" },
+    },
   },
   {
     timestamps: true,

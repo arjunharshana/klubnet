@@ -9,8 +9,9 @@ const {
   resendOTP,
   forgotPassword,
   resetPassword,
+  updateUserProfile,
 } = require("../controllers/userController");
-
+const upload = require("../middleware/uploadMiddleware");
 const { authMiddleware } = require("../middleware/authMiddleware");
 
 const {
@@ -39,6 +40,12 @@ router.post("/verify-otp", validateOTP, authRateLimiter, verifyOTP);
 router.post("/resend-otp", validateResendOTP, otpRateLimiter, resendOTP);
 
 router.post("/forgot-password", validateEmail, authRateLimiter, forgotPassword);
+router.put(
+  "/profile",
+  authMiddleware,
+  upload.single("image"),
+  updateUserProfile,
+);
 
 router.post(
   "/reset-password",
