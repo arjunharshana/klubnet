@@ -98,7 +98,7 @@ const getAllClubs = async (req, res) => {
   }
 };
 
-const joinClub = asynchandler(async (req, res) => {
+const leaveClub = async (req, res) => {
   const club = await Club.findById(req.params.id);
 
   if (!club) {
@@ -106,32 +106,19 @@ const joinClub = asynchandler(async (req, res) => {
     throw new Error("Club not found");
   }
 
-  // Check if user is already a member
-  if (club.members.includes(req.user.id)) {
-    //leave logic
-    club.members = club.members.filter(
-      (memberId) => memberId.toString() !== req.user.id,
-    );
-    await club.save();
-    return res.status(200).json({ success: true, data: club });
-  } else {
-    // join logic
-    club.members.push(req.user.id);
-    await club.save();
-
-    //notify club admin
-    if (club.admin.toString() !== req.user.id) {
-      await createNotification(
-        club.admin,
-        `${req.user.name} joined your club "${club.name}"`,
-        "club_join",
-        `/clubs/${club._id}`,
-      );
-    }
-
-    res.status(200).json({ success: true, data: club }); // User joined
+  if (!club.members.includes(req.user.id)) {
+    res.status(400);
+    throw new Error("You are not a member of this club");
   }
-});
+
+  club.members = club.members.filter(
+    (memberId) => memberId.toString() !== req.user.id,
+  );
+
+  await club.save();
+
+  res.status(200).json({ success: true, message: "You have left the club" });
+};
 
 const deleteClub = async (req, res) => {
   try {
@@ -242,14 +229,131 @@ const getSystemStats = async (req, res) => {
   }
 };
 
+const followClub = asyncHandler(async (req, res) => {
+  const club = await Club.findById(req.params.id);
+  if (!club) {
+    res.status(404);
+    throw new Error("Club not found");
+  }
+
+  // Add to followers if not already there
+  if (!club.followers.includes(req.user.id)) {
+    club.followers.push(req.user.id);
+    await club.save();
+  }
+
+  res.status(200).json({ success: true, data: club.followers });
+});
+
+const unfollowClub = asyncHandler(async (req, res) => {
+  const club = await Club.findById(req.params.id);
+
+  if (club) {
+    club.followers = club.followers.filter(
+      (id) => id.toString() !== req.user.id,
+    );
+    await club.save();
+    res.status(200).json({ success: true, data: club.followers });
+  } else {
+    res.status(404);
+    throw new Error("Club not found");
+  }
+});
+
+const joinRequestClub = asyncHandler(async (req, res) => {
+  const club = await Club.findById(req.params.id);
+  if (!club) {
+    res.status(404);
+    throw new Error("Club not found");
+  }
+
+  // Check if already a member or pending
+  if (club.members.includes(req.user.id)) {
+    return res.status(400).json({ message: "You are already a member" });
+  }
+  if (club.joinRequests.includes(req.user.id)) {
+    return res.status(400).json({ message: "Request already sent" });
+  }
+
+  // Add to join requests
+  club.joinRequests.push(req.user.id);
+
+  // automatically follow the club when requesting to join
+  if (!club.followers.includes(req.user.id)) {
+    club.followers.push(req.user.id);
+  }
+
+  await club.save();
+
+  res.status(200).json({ success: true, message: "Request sent successfully" });
+});
+
+const acceptRequest = asyncHandler(async (req, res) => {
+  const club = await Club.findById(req.params.id);
+  const userIdToApprove = req.params.userId;
+
+  if (!club) {
+    res.status(404);
+    throw new Error("Club not found");
+  }
+
+  // Check Permissions
+  if (club.admin.toString() !== req.user.id && req.user.role !== "superadmin") {
+    res.status(401);
+    throw new Error("Not authorized to manage this club");
+  }
+
+  if (!club.joinRequests.includes(userIdToApprove)) {
+    return res.status(400).json({ message: "No request found for this user" });
+  }
+
+  // Move from Requests to Members
+  club.joinRequests = club.joinRequests.filter(
+    (id) => id.toString() !== userIdToApprove,
+  );
+  club.members.push(userIdToApprove);
+
+  await club.save();
+
+  res.status(200).json({ success: true, message: "User accepted into club" });
+});
+
+const rejectRequest = asyncHandler(async (req, res) => {
+  const club = await Club.findById(req.params.id);
+  const userIdToReject = req.params.userId;
+
+  if (!club) {
+    res.status(404);
+    throw new Error("Club not found");
+  }
+
+  if (club.admin.toString() !== req.user.id && req.user.role !== "superadmin") {
+    res.status(401);
+    throw new Error("Not authorized");
+  }
+
+  // Remove from requests
+  club.joinRequests = club.joinRequests.filter(
+    (id) => id.toString() !== userIdToReject,
+  );
+  await club.save();
+
+  res.status(200).json({ success: true, message: "Request rejected" });
+});
+
 module.exports = {
   createClub,
   getAllClubs,
   getClubById,
-  joinClub,
+  leaveClub,
   deleteClub,
   getPendingClubs,
   approveClub,
   rejectClub,
   getSystemStats,
+  followClub,
+  unfollowClub,
+  joinRequestClub,
+  acceptRequest,
+  rejectRequest,
 };

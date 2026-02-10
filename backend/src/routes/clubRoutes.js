@@ -13,14 +13,18 @@ const {
   approveClub,
   rejectClub,
   getSystemStats,
+  followClub,
+  unfollowClub,
+  joinRequestClub,
+  acceptRequest,
+  rejectRequest,
 } = require("../controllers/clubController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 const { rateLimiter } = require("../middleware/rateLimiter");
 
 router.get("/", getAllClubs);
 router.get("/:id", getClubById);
-router.put("/:id/join", authMiddleware, joinClub);
-
+router.put("/:id/leave", authMiddleware, leaveClub);
 router.post(
   "/",
   authMiddleware,
@@ -29,6 +33,13 @@ router.post(
   createClub,
 );
 router.delete("/:id", authMiddleware, deleteClub);
+
+router.put("/:id/follow", authMiddleware, followClub);
+router.put("/:id/unfollow", authMiddleware, unfollowClub);
+router.post("/:id/join", authMiddleware, joinRequestClub);
+
+router.put("/:id/requests/:userId/accept", authMiddleware, acceptRequest);
+router.put("/:id/requests/:userId/reject", authMiddleware, rejectRequest);
 
 // Superadmin routes
 router.get("/admin/pending", authMiddleware, superAdmin, getPendingClubs);

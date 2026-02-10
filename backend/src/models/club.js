@@ -40,6 +40,12 @@ const clubSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    joinRequests: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     isApproved: {
       type: Boolean,
       default: false,
