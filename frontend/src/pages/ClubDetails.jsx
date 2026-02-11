@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../hooks/useAuth";
@@ -11,7 +11,6 @@ import {
   Mail,
   Info,
   ChevronRight,
-  Code,
   ArrowRight,
   Image as ImageIcon,
   CheckCircle,
@@ -19,6 +18,11 @@ import {
   Edit,
   Plus,
   Trash2,
+  Bell,
+  BellOff,
+  UserPlus,
+  Check,
+  X,
 } from "lucide-react";
 import CreateEvent from "../components/CreateEvent";
 
@@ -35,52 +39,116 @@ const ClubDetails = () => {
   const [events, setEvents] = useState([]);
   const [editingEvent, setEditingEvent] = useState(null);
 
-  // Helper: Check if current user is a member
-  const isMember = club?.members?.some((member) => member._id === user?._id);
-  const isAdmin = club?.admin?._id === user?._id;
+  // check if user is in array of members/followers/requests
+  const isUserInArray = (array) => {
+    if (!array || !user) return false;
+    return array.some(
+      (item) => (item._id || item).toString() === user._id.toString(),
+    );
+  };
 
-  // fetch data
-  useEffect(() => {
-    const fetchClub = async () => {
-      try {
-        const API_URL = import.meta.env.VITE_API_URL;
-        const { data } = await axios.get(`${API_URL}/api/clubs/${id}`);
-        setClub(data.data);
-        const eventsRes = await axios.get(`${API_URL}/api/events/club/${id}`);
-        setEvents(eventsRes.data.data);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load club details.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchClub();
-  }, [id]);
+  // states
+  const isMember = isUserInArray(club?.members);
+  const isFollower = isUserInArray(club?.followers);
+  const isPending = isUserInArray(club?.joinRequests);
+  const isAdmin = club?.admin?._id === user?._id || club?.admin === user?._id;
 
-  // handle join/leave
-  const handleJoinToggle = async () => {
-    if (!user) return navigate("/login");
-    setActionLoading(true);
-
+  // Fetch Data Function
+  const fetchClubData = useCallback(async () => {
     try {
       const API_URL = import.meta.env.VITE_API_URL;
-      const { data } = await axios.put(
-        `${API_URL}/api/clubs/${id}/join}`,
+      const { data } = await axios.get(`${API_URL}/api/clubs/${id}`);
+      setClub(data.data);
+      const eventsRes = await axios.get(`${API_URL}/api/events/club/${id}`);
+      setEvents(eventsRes.data.data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load club details.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchClubData();
+  }, [fetchClubData]);
+
+  // membership actions
+
+  const handleFollowToggle = async () => {
+    if (!user) return navigate("/login");
+    setActionLoading(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      const endpoint = isFollower ? "unfollow" : "follow";
+      await axios.put(
+        `${API_URL}/api/clubs/${id}/${endpoint}`,
         {},
         { withCredentials: true },
       );
-
-      // Update local state with fresh data from backend
-      setClub(data.data);
+      await fetchClubData(); // Refresh data
     } catch (err) {
-      alert(err.response?.data?.message || "Action failed");
+      alert(err.response?.data?.message || "Failed to update follow status");
     } finally {
       setActionLoading(false);
     }
   };
 
-  // refresh events after creating new one
+  const handleJoinRequest = async () => {
+    if (!user) return navigate("/login");
+    setActionLoading(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      await axios.post(
+        `${API_URL}/api/clubs/${id}/join`,
+        {},
+        { withCredentials: true },
+      );
+      await fetchClubData();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to send join request");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleLeaveClub = async () => {
+    if (!window.confirm("Are you sure you want to leave this club?")) return;
+    setActionLoading(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      await axios.put(
+        `${API_URL}/api/clubs/${id}/leave`,
+        {},
+        { withCredentials: true },
+      );
+      await fetchClubData();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to leave club");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // admin actions
+
+  const handleManageRequest = async (userId, action) => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      // action is either 'accept' or 'reject'
+      await axios.put(
+        `${API_URL}/api/clubs/${id}/requests/${userId}/${action}`,
+        {},
+        { withCredentials: true },
+      );
+      await fetchClubData(); // Refresh list
+    } catch (err) {
+      alert(err.response?.data?.message || `Failed to ${action} request`);
+    }
+  };
+
+  // event actions
+
   const refreshEvents = async () => {
     try {
       const API_URL = import.meta.env.VITE_API_URL;
@@ -91,10 +159,8 @@ const ClubDetails = () => {
     }
   };
 
-  //handle rsvp to event
   const handleRSVP = async (eventId) => {
     if (!user) return navigate("/login");
-
     try {
       const API_URL = import.meta.env.VITE_API_URL;
       await axios.put(
@@ -108,16 +174,13 @@ const ClubDetails = () => {
     }
   };
 
-  //handle delete event
   const handleDeleteEvent = async (eventId) => {
     if (
       !window.confirm(
         "Are you sure you want to delete this event? This cannot be undone.",
       )
-    ) {
+    )
       return;
-    }
-
     try {
       const API_URL = import.meta.env.VITE_API_URL;
       await axios.delete(`${API_URL}/api/events/${eventId}`, {
@@ -130,7 +193,6 @@ const ClubDetails = () => {
     }
   };
 
-  //handle edit event
   const handleEditEvent = (event) => {
     setEditingEvent(event);
     setShowEvents(true);
@@ -141,7 +203,6 @@ const ClubDetails = () => {
     setEditingEvent(null);
   };
 
-  // check if user has joined event
   const hasJoinedEvent = (event) => {
     return event.attendees.some((att) => (att._id || att) === user?._id);
   };
@@ -161,18 +222,17 @@ const ClubDetails = () => {
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark transition-colors duration-300">
-      {/* navbar */}
       <DashboardNavbar />
 
       <main className="flex-grow pb-12 relative">
-        {/* Background Blobs (Optional Visual Flair) */}
+        {/* Background Blobs */}
         <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-50">
           <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-[100px]"></div>
           <div className="absolute bottom-[20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-400/5 blur-[100px]"></div>
         </div>
 
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          {/*breadcrumbs */}
+          {/* Breadcrumbs */}
           <div className="py-6 flex items-center gap-2 text-sm text-muted-light dark:text-muted-dark">
             <span
               className="hover:text-primary cursor-pointer"
@@ -193,19 +253,15 @@ const ClubDetails = () => {
             </span>
           </div>
 
-          {/* hero section */}
+          {/* Hero Section */}
           <div className="relative w-full overflow-hidden rounded-2xl shadow-lg group mb-8 h-[300px] md:h-[350px]">
-            {/* Cover Image */}
             <div
               className="absolute inset-0 bg-gray-200 dark:bg-gray-800 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
               style={{
                 backgroundImage: `url(${club.image || "https://via.placeholder.com/1200x600"})`,
               }}
             ></div>
-            {/* Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-
-            {/* Hero Content */}
             <div className="relative flex h-full flex-col justify-end p-6 md:p-10">
               <div className="mb-4 flex items-center gap-3">
                 <span className="inline-flex items-center rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-xs font-bold text-white border border-white/30 uppercase tracking-wide">
@@ -224,11 +280,11 @@ const ClubDetails = () => {
             </div>
           </div>
 
-          {/* main grid layout */}
+          {/* Main Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* left column*/}
+            {/* Left Column (Content) */}
             <div className="lg:col-span-8 flex flex-col gap-8">
-              {/* about section */}
+              {/* About Section */}
               <section className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/50 dark:border-gray-700 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -241,7 +297,7 @@ const ClubDetails = () => {
                 </div>
               </section>
 
-              {/*gallery bento*/}
+              {/* Gallery Section */}
               <section>
                 <div className="flex items-center justify-between mb-4 px-1">
                   <div className="flex items-center gap-3">
@@ -254,9 +310,7 @@ const ClubDetails = () => {
                     View Gallery <ArrowRight size={16} />
                   </button>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[400px]">
-                  {/* large left image */}
                   <div className="relative w-full h-full rounded-2xl overflow-hidden group shadow-sm">
                     <img
                       src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=800"
@@ -267,8 +321,6 @@ const ClubDetails = () => {
                       <p className="font-bold">Hackathon 2025</p>
                     </div>
                   </div>
-
-                  {/* right column stack */}
                   <div className="flex flex-col gap-4 h-full">
                     <div className="relative flex-1 w-full rounded-2xl overflow-hidden group shadow-sm">
                       <img
@@ -288,7 +340,7 @@ const ClubDetails = () => {
                 </div>
               </section>
 
-              {/* upcoming events */}
+              {/* Events Section */}
               <section className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/50 dark:border-gray-700 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -297,8 +349,6 @@ const ClubDetails = () => {
                     </div>
                     <h3 className="text-xl font-bold">Upcoming Events</h3>
                   </div>
-
-                  {/* Only show this button if user is Admin */}
                   {isAdmin && (
                     <button
                       onClick={openCreateModal}
@@ -309,7 +359,6 @@ const ClubDetails = () => {
                   )}
                 </div>
 
-                {/* dynamic events list */}
                 <div className="space-y-4">
                   {events.length > 0 ? (
                     events.map((event) => (
@@ -317,7 +366,6 @@ const ClubDetails = () => {
                         key={event._id}
                         className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl hover:bg-white/40 dark:hover:bg-gray-700/50 border border-transparent hover:border-border-light dark:hover:border-gray-600 transition-all cursor-pointer group"
                       >
-                        {/* Date Box */}
                         <div className="flex-shrink-0 w-full sm:w-24 h-24 sm:h-24 rounded-lg bg-primary/10 dark:bg-primary/20 flex flex-col items-center justify-center text-primary border border-primary/20">
                           <span className="text-xs font-bold uppercase tracking-wider">
                             {new Date(event.date).toLocaleString("default", {
@@ -328,8 +376,6 @@ const ClubDetails = () => {
                             {new Date(event.date).getDate()}
                           </span>
                         </div>
-
-                        {/* Event Content */}
                         <div className="flex-1 flex flex-col justify-center">
                           <h4 className="text-lg font-bold group-hover:text-primary transition-colors">
                             {event.title}
@@ -342,7 +388,6 @@ const ClubDetails = () => {
                                   handleEditEvent(event);
                                 }}
                                 className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Edit Event"
                               >
                                 <Edit size={16} />
                               </button>
@@ -352,7 +397,6 @@ const ClubDetails = () => {
                                   handleDeleteEvent(event._id);
                                 }}
                                 className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete Event"
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -360,7 +404,7 @@ const ClubDetails = () => {
                           )}
                           <p className="text-sm text-muted-light dark:text-muted-dark mb-2 flex items-center gap-2">
                             <span className="flex items-center gap-1">
-                              <Clock size={14} />
+                              <Clock size={14} />{" "}
                               {new Date(event.date).toLocaleTimeString([], {
                                 hour: "2-digit",
                                 minute: "2-digit",
@@ -375,19 +419,13 @@ const ClubDetails = () => {
                             {event.description}
                           </p>
                         </div>
-
-                        {/* Register Button */}
                         <div className="flex items-center sm:justify-end">
                           <button
                             onClick={(e) => {
-                              e.stopPropagation(); // Prevent clicking the card container
+                              e.stopPropagation();
                               handleRSVP(event._id);
                             }}
-                            className={`px-4 py-2 rounded-lg border text-sm font-bold transition-all shadow-sm ${
-                              hasJoinedEvent(event)
-                                ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" // Joined State
-                                : "bg-white dark:bg-gray-800 border-border-light dark:border-gray-600 hover:bg-primary/5 hover:text-primary hover:border-primary/30" // Default State
-                            }`}
+                            className={`px-4 py-2 rounded-lg border text-sm font-bold transition-all shadow-sm ${hasJoinedEvent(event) ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" : "bg-white dark:bg-gray-800 border-border-light dark:border-gray-600 hover:bg-primary/5 hover:text-primary hover:border-primary/30"}`}
                           >
                             {hasJoinedEvent(event) ? (
                               <span className="flex items-center gap-1">
@@ -401,7 +439,6 @@ const ClubDetails = () => {
                       </div>
                     ))
                   ) : (
-                    /* Empty State */
                     <div className="text-center py-8 text-gray-500">
                       <p>No upcoming events scheduled.</p>
                     </div>
@@ -410,66 +447,84 @@ const ClubDetails = () => {
               </section>
             </div>
 
-            {/* sidebar */}
+            {/* Right Column (Sidebar) */}
             <div className="lg:col-span-4 relative">
               <div className="sticky top-24 space-y-6">
-                {/* action card */}
+                {/* Action Card */}
                 <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl shadow-primary/5 border border-white/50 dark:border-gray-700">
-                  {/* Join/Leave Button */}
-                  <button
-                    onClick={handleJoinToggle}
-                    disabled={actionLoading}
-                    className={`w-full py-3.5 px-4 rounded-xl font-bold text-lg shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 mb-6 ${
-                      isAdmin
-                        ? "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 cursor-default"
-                        : isMember
-                          ? "bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-900 hover:bg-red-100"
-                          : "bg-primary hover:bg-primary-hover text-white shadow-primary/25"
-                    }`}
-                  >
-                    {actionLoading ? (
-                      "Processing..."
-                    ) : isAdmin ? (
-                      <>
-                        {" "}
-                        <Edit size={20} /> Edit Club{" "}
-                      </>
-                    ) : isMember ? (
-                      <>
-                        {" "}
-                        <LogOut size={20} /> Leave Club{" "}
-                      </>
+                  {/* dual */}
+                  <div className="flex flex-col gap-3 mb-6">
+                    {isAdmin ? (
+                      <button className="w-full py-3.5 px-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 cursor-default">
+                        <Edit size={20} /> Manage Club
+                      </button>
                     ) : (
                       <>
-                        {" "}
-                        Join Club <ArrowRight size={20} />{" "}
+                        {/* Request to Join / Leave / Pending */}
+                        {isMember ? (
+                          <button
+                            onClick={handleLeaveClub}
+                            disabled={actionLoading}
+                            className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-900 hover:bg-red-100 active:scale-[0.98]"
+                          >
+                            <LogOut size={18} /> Leave Club
+                          </button>
+                        ) : isPending ? (
+                          <button
+                            disabled
+                            className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-amber-50 dark:bg-amber-900/20 text-amber-600 border border-amber-200 dark:border-amber-900 cursor-not-allowed"
+                          >
+                            <Clock size={18} /> Request Pending
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleJoinRequest}
+                            disabled={actionLoading}
+                            className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-primary hover:bg-primary-hover text-white shadow-lg shadow-primary/25 active:scale-[0.98]"
+                          >
+                            <UserPlus size={18} /> Request to Join
+                          </button>
+                        )}
+
+                        {/* Follow / Unfollow */}
+                        <button
+                          onClick={handleFollowToggle}
+                          disabled={actionLoading}
+                          className="w-full py-2.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-transparent border border-border-light dark:border-gray-600 text-muted-light dark:text-muted-dark hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98]"
+                        >
+                          {isFollower ? (
+                            <>
+                              <BellOff size={18} /> Unfollow
+                            </>
+                          ) : (
+                            <>
+                              <Bell size={18} /> Follow for Updates
+                            </>
+                          )}
+                        </button>
                       </>
                     )}
-                  </button>
-
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-medium text-muted-light dark:text-muted-dark">
-                      Active Members
-                    </span>
-                    <span className="text-sm font-bold">
-                      {club.members?.length || 0}
-                    </span>
                   </div>
 
-                  {/* avatar stack */}
-                  <div className="flex -space-x-3 mb-6 overflow-hidden py-1 pl-1">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800 bg-gray-300 dark:bg-gray-600"
-                      ></div>
-                    ))}
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full ring-2 ring-white dark:ring-gray-800 bg-gray-100 dark:bg-gray-700 text-[10px] font-bold text-gray-500">
-                      +{club.members?.length || 0}
+                  {/* Stats Split: Members & Followers */}
+                  <div className="flex flex-col gap-2 mb-6 border-b border-border-light dark:border-gray-700 pb-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-light dark:text-muted-dark">
+                        Active Members
+                      </span>
+                      <span className="text-sm font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-md">
+                        {club.members?.length || 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-light dark:text-muted-dark">
+                        Followers
+                      </span>
+                      <span className="text-sm font-bold bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-md">
+                        {club.followers?.length || 0}
+                      </span>
                     </div>
                   </div>
-
-                  <hr className="border-border-light dark:border-gray-700 mb-6" />
 
                   {/* Admin Profile */}
                   <div className="mb-2">
@@ -499,7 +554,66 @@ const ClubDetails = () => {
                   </button>
                 </div>
 
-                {/* info card */}
+                {/* admin panel: manage pending requests */}
+                {isAdmin && club.joinRequests?.length > 0 && (
+                  <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-2xl p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4 text-amber-700 dark:text-amber-500">
+                      <Users size={18} />
+                      <h4 className="font-bold">
+                        Pending Requests ({club.joinRequests.length})
+                      </h4>
+                    </div>
+                    <div className="flex flex-col gap-3 max-h-60 overflow-y-auto pr-1">
+                      {club.joinRequests.map((reqUser) => (
+                        <div
+                          key={reqUser._id || reqUser}
+                          className="flex items-center justify-between bg-white dark:bg-gray-800 p-3 rounded-xl border border-amber-100 dark:border-gray-700 shadow-sm"
+                        >
+                          <div className="flex-1 min-w-0 mr-2">
+                            {/* Note: Assumes backend populates joinRequests with name, otherwise renders generic */}
+                            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                              {reqUser.name || "Student"}
+                            </p>
+                            {reqUser.email && (
+                              <p className="text-xs text-gray-500 truncate">
+                                {reqUser.email}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() =>
+                                handleManageRequest(
+                                  reqUser._id || reqUser,
+                                  "accept",
+                                )
+                              }
+                              className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg transition-colors"
+                              title="Accept"
+                            >
+                              <Check size={16} />
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleManageRequest(
+                                  reqUser._id || reqUser,
+                                  "reject",
+                                )
+                              }
+                              className="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors"
+                              title="Reject"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* --- END ADMIN PANEL --- */}
+
+                {/* Info Stats Card */}
                 <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-5 border border-white/50 dark:border-gray-700">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-2 rounded-xl bg-purple-50 dark:bg-primary/10">
@@ -523,16 +637,21 @@ const ClubDetails = () => {
           </div>
         </div>
       </main>
-      {/* create event modal */}
+
+      {/* Create/Edit Event Modal */}
       {showEvents && (
         <CreateEvent
-          clubId={club._id} // Pass the club ID so backend knows where to put event
+          clubId={club._id}
           onClose={() => setShowEvents(false)}
           eventToEdit={editingEvent}
           onEventCreated={() => {
             refreshEvents();
             setShowEvents(false);
-            alert("Event Created Successfully!");
+            alert(
+              editingEvent
+                ? "Event Updated Successfully!"
+                : "Event Created Successfully!",
+            );
           }}
         />
       )}
