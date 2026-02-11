@@ -14,6 +14,7 @@ import {
   Megaphone,
   Clock,
   Settings,
+  Bell,
 } from "lucide-react";
 
 const Profile = () => {
@@ -21,16 +22,17 @@ const Profile = () => {
   const navigate = useNavigate();
 
   // State
-  const [myClubs, setMyClubs] = useState([]);
+  const [memberClubs, setMemberClubs] = useState([]);
+  const [followedClubs, setFollowedClubs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("My Clubs");
+  const [activeTab, setActiveTab] = useState("Memberships");
   const [search, setSearch] = useState("");
   const [sortOption, setSortOption] = useState("Most Active");
   const [myEvents, setMyEvents] = useState([]);
 
   // fetch joined clubs and events
   useEffect(() => {
-    const fetchJoinedClubs = async () => {
+    const fetchProfileData = async () => {
       try {
         const API_URL = import.meta.env.VITE_API_URL;
 
@@ -43,11 +45,26 @@ const Profile = () => {
         ]);
 
         if (user) {
-          // Filter clubs
-          const joined = clubsRes.data.data.filter((club) =>
-            club.members.some((member) => member._id === user._id),
+          const allClubs = clubsRes.data.data;
+
+          // 1. Memberships: User is Admin OR in the members array
+          const joined = allClubs.filter(
+            (club) =>
+              club.members.some(
+                (member) => (member._id || member) === user._id,
+              ) || (club.admin?._id || club.admin) === user._id,
           );
-          setMyClubs(joined);
+
+          //User is in followers array, but NOT a member/admin
+          const followed = allClubs.filter(
+            (club) =>
+              club.followers.some(
+                (follower) => (follower._id || follower) === user._id,
+              ) && !joined.some((jClub) => jClub._id === club._id),
+          );
+
+          setMemberClubs(joined);
+          setFollowedClubs(followed);
           setMyEvents(eventsRes.data.data);
         }
       } catch (err) {
@@ -57,17 +74,17 @@ const Profile = () => {
       }
     };
 
-    if (user) fetchJoinedClubs();
+    if (user) fetchProfileData();
   }, [user]);
 
-  // Helper to determine role
+  // Helper to determine role for badges
   const getRole = (club) => {
     return club.admin?._id === user?._id ? "Admin" : "Member";
   };
 
-  // sorting function
-  const getSortedClubs = () => {
-    let filtered = myClubs.filter((c) =>
+  // sorting function (works dynamically for whichever list is passed in)
+  const getSortedClubs = (clubList) => {
+    let filtered = clubList.filter((c) =>
       c.name.toLowerCase().includes(search.toLowerCase()),
     );
 
@@ -128,9 +145,11 @@ const Profile = () => {
               {/* Stats Row */}
               <div className="grid grid-cols-2 gap-3 w-full mb-6">
                 <div className="flex flex-col items-center p-3 rounded-xl bg-white/50 dark:bg-gray-700/50 border border-white/60 dark:border-gray-600">
-                  <span className="text-2xl font-bold">{myClubs.length}</span>
+                  <span className="text-2xl font-bold">
+                    {memberClubs.length}
+                  </span>
                   <span className="text-xs text-muted-light dark:text-muted-dark uppercase tracking-wide font-semibold">
-                    Clubs
+                    Memberships
                   </span>
                 </div>
                 <div className="flex flex-col items-center p-3 rounded-xl bg-white/50 dark:bg-gray-700/50 border border-white/60 dark:border-gray-600">
@@ -165,7 +184,6 @@ const Profile = () => {
                       className="flex gap-3 items-start cursor-pointer hover:bg-white/50 dark:hover:bg-gray-700/30 p-2 rounded-lg transition-colors"
                       onClick={() => navigate(`/clubs/${event.club._id}`)}
                     >
-                      {/* Date Box */}
                       <div className="bg-primary/10 text-primary rounded-lg p-2 min-w-[50px] flex flex-col items-center justify-center text-xs font-bold leading-tight">
                         <span className="uppercase">
                           {new Date(event.date).toLocaleString("default", {
@@ -176,7 +194,6 @@ const Profile = () => {
                           {new Date(event.date).getDate()}
                         </span>
                       </div>
-                      {/* Info */}
                       <div>
                         <p className="text-foreground-light dark:text-foreground-dark font-bold text-sm line-clamp-1">
                           {event.title}
@@ -205,27 +222,41 @@ const Profile = () => {
           <section className="lg:col-span-8 flex flex-col h-full">
             {/* Tab Navigation */}
             <div className="mb-6 space-y-4">
-              <div className="flex items-center gap-8 border-b border-gray-200 dark:border-gray-700 px-2">
-                {["My Clubs", "Events", "Settings"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`pb-3 text-base font-medium transition-colors relative ${
-                      activeTab === tab
-                        ? "text-primary font-bold"
-                        : "text-muted-light dark:text-muted-dark hover:text-foreground-light dark:hover:text-foreground-dark"
-                    }`}
-                  >
-                    {tab}
-                    {activeTab === tab && (
-                      <span className="absolute bottom-0 left-0 w-full h-[3px] bg-primary rounded-t-full"></span>
-                    )}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-6 border-b border-gray-200 dark:border-gray-700 px-2">
+                {["Memberships", "Following", "Events", "Settings"].map(
+                  (tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`pb-3 text-base font-medium transition-colors relative ${
+                        activeTab === tab
+                          ? "text-primary font-bold"
+                          : "text-muted-light dark:text-muted-dark hover:text-foreground-light dark:hover:text-foreground-dark"
+                      }`}
+                    >
+                      {tab}
+                      {/* Add small counts next to Membership/Following */}
+                      {tab === "Memberships" && (
+                        <span className="ml-1.5 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
+                          {memberClubs.length}
+                        </span>
+                      )}
+                      {tab === "Following" && (
+                        <span className="ml-1.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded-md">
+                          {followedClubs.length}
+                        </span>
+                      )}
+
+                      {activeTab === tab && (
+                        <span className="absolute bottom-0 left-0 w-full h-[3px] bg-primary rounded-t-full"></span>
+                      )}
+                    </button>
+                  ),
+                )}
               </div>
 
-              {/* search & sort */}
-              {activeTab === "My Clubs" && (
+              {/* search & sort for Clubs views */}
+              {(activeTab === "Memberships" || activeTab === "Following") && (
                 <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
                   <div className="relative w-full sm:w-auto flex-grow max-w-md">
                     <Search
@@ -236,7 +267,7 @@ const Profile = () => {
                       type="text"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search your clubs..."
+                      placeholder={`Search ${activeTab.toLowerCase()}...`}
                       className="w-full pl-10 pr-4 py-2.5 bg-white/60 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-medium placeholder:text-gray-400 shadow-sm backdrop-blur-sm dark:text-white"
                     />
                   </div>
@@ -251,7 +282,9 @@ const Profile = () => {
                         className="w-full appearance-none bg-white/60 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-sm font-bold py-2.5 pl-3 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer shadow-sm dark:text-white"
                       >
                         <option value="Most Active">Most Active</option>
-                        <option value="Role">Role (Admin First)</option>
+                        {activeTab === "Memberships" && (
+                          <option value="Role">Role (Admin First)</option>
+                        )}
                         <option value="A-Z">A-Z</option>
                       </select>
                     </div>
@@ -260,17 +293,19 @@ const Profile = () => {
               )}
             </div>
 
-            {/* tab content */}
-
-            {/* my clubs */}
-            {activeTab === "My Clubs" && (
+            {/* membership/following */}
+            {(activeTab === "Memberships" || activeTab === "Following") && (
               <div className="flex flex-col gap-4">
                 {loading ? (
                   <p className="text-center py-10 opacity-60">
                     Loading clubs...
                   </p>
-                ) : getSortedClubs().length > 0 ? (
-                  getSortedClubs().map((club) => (
+                ) : getSortedClubs(
+                    activeTab === "Memberships" ? memberClubs : followedClubs,
+                  ).length > 0 ? (
+                  getSortedClubs(
+                    activeTab === "Memberships" ? memberClubs : followedClubs,
+                  ).map((club) => (
                     <article
                       key={club._id}
                       className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-5 flex flex-col md:flex-row gap-5 items-start border border-white/50 dark:border-gray-700 shadow-sm hover:shadow-md transition-all"
@@ -290,15 +325,19 @@ const Profile = () => {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-3">
                             <h3 className="text-lg font-bold">{club.name}</h3>
-                            <span
-                              className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide ${
-                                getRole(club) === "Admin"
-                                  ? "bg-primary/10 text-primary"
-                                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                              }`}
-                            >
-                              {getRole(club)}
-                            </span>
+
+                            {/* Dynamic Badge Based on Tab */}
+                            {activeTab === "Memberships" ? (
+                              <span
+                                className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide ${getRole(club) === "Admin" ? "bg-primary/10 text-primary" : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}`}
+                              >
+                                {getRole(club)}
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide bg-blue-100 text-blue-700 flex items-center gap-1">
+                                <Bell size={10} /> Following
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -320,8 +359,12 @@ const Profile = () => {
                   ))
                 ) : (
                   <div className="text-center py-10 opacity-60">
-                    <Grid size={48} className="mx-auto mb-2" />
-                    <p>You haven't joined any clubs yet.</p>
+                    <Grid size={48} className="mx-auto mb-2 text-gray-400" />
+                    <p>
+                      {activeTab === "Memberships"
+                        ? "You haven't joined any clubs yet."
+                        : "You aren't following any clubs yet."}
+                    </p>
                     <Link
                       to="/explore"
                       className="text-primary font-bold hover:underline"
@@ -333,7 +376,7 @@ const Profile = () => {
               </div>
             )}
 
-            {/* events */}
+            {/* TAB CONTENT: Events */}
             {activeTab === "Events" && (
               <div className="flex flex-col gap-4">
                 {myEvents.length > 0 ? (
@@ -381,7 +424,10 @@ const Profile = () => {
                   ))
                 ) : (
                   <div className="text-center py-20 opacity-50">
-                    <Calendar size={48} className="mx-auto mb-4" />
+                    <Calendar
+                      size={48}
+                      className="mx-auto mb-4 text-gray-400"
+                    />
                     <p className="font-bold">
                       You haven't joined any events yet.
                     </p>
@@ -396,10 +442,9 @@ const Profile = () => {
               </div>
             )}
 
-            {/*settings tab */}
+            {/* TAB CONTENT: Settings */}
             {activeTab === "Settings" && (
-              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-8 border border-white/50 dark:border-gray-700 shadow-sm text-just">
-                {/* Settings Icon */}
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-8 border border-white/50 dark:border-gray-700 shadow-sm">
                 <ProfileSettings />
               </div>
             )}
