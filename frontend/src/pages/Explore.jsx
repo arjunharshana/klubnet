@@ -3,6 +3,16 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import DashboardNavbar from "../components/DashboardNavbar";
+import {
+  Search,
+  Users,
+  SearchX,
+  ArrowRight,
+  CheckCircle,
+  Clock,
+  Bell,
+  Shield,
+} from "lucide-react";
 
 const CATEGORIES = [
   "All",
@@ -25,7 +35,7 @@ const Explore = () => {
   const [category, setCategory] = useState("All");
 
   useEffect(() => {
-    if (!user) {
+    if (!user && !authLoading) {
       navigate("/login");
     }
   }, [user, authLoading, navigate]);
@@ -58,7 +68,21 @@ const Explore = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [search, category]); // Re-run when search or category changes
+  }, [search, category]);
+
+  const getUserStatus = (club) => {
+    if (!user) return null;
+    const userId = user._id;
+
+    if ((club.admin?._id || club.admin) === userId) return "Admin";
+    if (club.members?.some((m) => (m._id || m) === userId)) return "Member";
+    if (club.joinRequests?.some((r) => (r._id || r) === userId))
+      return "Pending";
+    if (club.followers?.some((f) => (f._id || f) === userId))
+      return "Following";
+
+    return null;
+  };
 
   if (authLoading) {
     return (
@@ -70,11 +94,10 @@ const Explore = () => {
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark transition-colors duration-300">
-      {/* Reusable Navbar */}
       <DashboardNavbar />
 
       <main className="flex-1 w-full max-w-[1440px] mx-auto p-6 md:p-8 lg:p-10 flex flex-col gap-8">
-        {/* HERO SECTION */}
+        {/*main section */}
         <div className="flex flex-col items-center justify-center gap-6 py-6 md:py-10 max-w-4xl mx-auto w-full text-center">
           <div className="space-y-2">
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground-light dark:text-foreground-dark">
@@ -89,9 +112,10 @@ const Explore = () => {
           {/* Search Bar */}
           <div className="w-full relative group max-w-2xl mx-auto">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <span className="material-symbols-outlined text-muted-light group-focus-within:text-primary transition-colors">
-                search
-              </span>
+              <Search
+                className="text-muted-light group-focus-within:text-primary transition-colors"
+                size={20}
+              />
             </div>
             <input
               value={search}
@@ -120,72 +144,96 @@ const Explore = () => {
           </div>
         </div>
 
-        {/*clubs grid */}
+        {/* clubs grid */}
         {loading ? (
           <div className="text-center py-20 text-muted-light">
             Loading clubs...
           </div>
         ) : clubs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {clubs.map((club) => (
-              <div
-                key={club._id}
-                className="group bg-card-light dark:bg-card-dark rounded-2xl overflow-hidden border border-border-light/60 dark:border-border-dark/60 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 flex flex-col h-full"
-              >
-                {/* card image */}
+            {clubs.map((club) => {
+              const status = getUserStatus(club); // Calculate status once
+
+              return (
                 <div
-                  className="h-48 bg-cover bg-center relative overflow-hidden bg-gray-200 dark:bg-gray-800"
-                  style={{
-                    backgroundImage: `url(${
-                      club.image || "https://via.placeholder.com/300"
-                    })`,
-                  }}
+                  key={club._id}
+                  className="group bg-card-light dark:bg-card-dark rounded-2xl overflow-hidden border border-border-light/60 dark:border-border-dark/60 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 flex flex-col h-full"
                 >
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
-                  <div className="absolute top-3 right-3">
-                    <span className="bg-white/95 dark:bg-black/80 backdrop-blur-md text-foreground-light dark:text-white text-xs font-bold px-2.5 py-1 rounded-lg border border-white/20 shadow-sm">
-                      {club.category}
-                    </span>
-                  </div>
-                </div>
+                  {/* card image */}
+                  <div
+                    className="h-48 bg-cover bg-center relative overflow-hidden bg-gray-200 dark:bg-gray-800"
+                    style={{
+                      backgroundImage: `url(${
+                        club.image || "https://via.placeholder.com/300"
+                      })`,
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
 
-                {/* card content */}
-                <div className="p-5 flex flex-col flex-1">
-                  <h3 className="text-lg font-bold mb-2 line-clamp-1 text-foreground-light dark:text-foreground-dark group-hover:text-primary transition-colors">
-                    {club.name}
-                  </h3>
-                  <p className="text-muted-light dark:text-muted-dark text-sm line-clamp-2 mb-4 leading-relaxed">
-                    {club.description}
-                  </p>
-
-                  {/* footer */}
-                  <div className="mt-auto flex items-center justify-between pt-4 border-t border-border-light dark:border-border-dark">
-                    <div className="flex items-center gap-1.5 text-muted-light dark:text-muted-dark text-xs font-semibold">
-                      <span className="material-symbols-outlined text-[16px]">
-                        group
+                    {/* Top Right Badges */}
+                    <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+                      <span className="bg-white/95 dark:bg-black/80 backdrop-blur-md text-foreground-light dark:text-white text-xs font-bold px-2.5 py-1 rounded-lg border border-white/20 shadow-sm">
+                        {club.category}
                       </span>
-                      <span>{club.members?.length || 0} Members</span>
-                    </div>
 
-                    {/* view details of club */}
-                    <Link
-                      to={`/clubs/${club._id}`}
-                      className="px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold hover:bg-primary hover:text-white transition-all"
-                    >
-                      View Details
-                    </Link>
+                      {/* Status Badge */}
+                      {status === "Admin" && (
+                        <span className="bg-purple-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                          <Shield size={12} /> Admin
+                        </span>
+                      )}
+                      {status === "Member" && (
+                        <span className="bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                          <CheckCircle size={12} /> Member
+                        </span>
+                      )}
+                      {status === "Following" && (
+                        <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                          <Bell size={12} /> Following
+                        </span>
+                      )}
+                      {status === "Pending" && (
+                        <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                          <Clock size={12} /> Pending
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* card content */}
+                  <div className="p-5 flex flex-col flex-1">
+                    <h3 className="text-lg font-bold mb-2 line-clamp-1 text-foreground-light dark:text-foreground-dark group-hover:text-primary transition-colors">
+                      {club.name}
+                    </h3>
+                    <p className="text-muted-light dark:text-muted-dark text-sm line-clamp-2 mb-4 leading-relaxed">
+                      {club.description}
+                    </p>
+
+                    {/* footer */}
+                    <div className="mt-auto flex items-center justify-between pt-4 border-t border-border-light dark:border-border-dark">
+                      <div className="flex items-center gap-1.5 text-muted-light dark:text-muted-dark text-xs font-semibold">
+                        <Users size={16} />
+                        <span>{club.members?.length || 0} Members</span>
+                      </div>
+
+                      {/* view details of club */}
+                      <Link
+                        to={`/clubs/${club._id}`}
+                        className="px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1"
+                      >
+                        View Details <ArrowRight size={14} />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           /* empty state */
           <div className="text-center py-16">
             <div className="size-20 bg-muted-light/10 dark:bg-muted-dark/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-4xl text-muted-light">
-                search_off
-              </span>
+              <SearchX className="text-muted-light" size={40} />
             </div>
             <h3 className="text-xl font-bold mb-2 text-foreground-light dark:text-foreground-dark">
               No clubs found

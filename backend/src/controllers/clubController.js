@@ -202,7 +202,6 @@ const rejectClub = asynchandler(async (req, res) => {
     "alert",
   );
 
-  //we will just delete the club for now
   await club.deleteOne();
   res.status(200).json({ success: true, message: "Club rejected" });
 });
@@ -321,7 +320,6 @@ const acceptRequest = asyncHandler(async (req, res) => {
 const rejectRequest = asyncHandler(async (req, res) => {
   const club = await Club.findById(req.params.id);
   const userIdToReject = req.params.userId;
-
   if (!club) {
     res.status(404);
     throw new Error("Club not found");

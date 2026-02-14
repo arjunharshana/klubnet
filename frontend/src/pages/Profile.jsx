@@ -82,7 +82,7 @@ const Profile = () => {
     return club.admin?._id === user?._id ? "Admin" : "Member";
   };
 
-  // sorting function (works dynamically for whichever list is passed in)
+  // sorting function
   const getSortedClubs = (clubList) => {
     let filtered = clubList.filter((c) =>
       c.name.toLowerCase().includes(search.toLowerCase()),
@@ -235,7 +235,7 @@ const Profile = () => {
                       }`}
                     >
                       {tab}
-                      {/* Add small counts next to Membership/Following */}
+                      {/* membership/followers count */}
                       {tab === "Memberships" && (
                         <span className="ml-1.5 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
                           {memberClubs.length}
@@ -376,7 +376,7 @@ const Profile = () => {
               </div>
             )}
 
-            {/* TAB CONTENT: Events */}
+            {/* events */}
             {activeTab === "Events" && (
               <div className="flex flex-col gap-4">
                 {myEvents.length > 0 ? (
@@ -442,7 +442,7 @@ const Profile = () => {
               </div>
             )}
 
-            {/* TAB CONTENT: Settings */}
+            {/* settings */}
             {activeTab === "Settings" && (
               <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-8 border border-white/50 dark:border-gray-700 shadow-sm">
                 <ProfileSettings />
