@@ -1,9 +1,9 @@
 const Club = require("../models/club");
 const User = require("../models/user");
-const asynchandler = require("express-async-handler");
 const cloudinary = require("../config/cloudinary");
 const fs = require("fs");
 const { createNotification } = require("./notificationController");
+const asyncHandler = require("express-async-handler");
 
 const createClub = async (req, res) => {
   try {
@@ -160,7 +160,7 @@ const getClubById = async (req, res) => {
 };
 
 //superadmin functions
-const getPendingClubs = asynchandler(async (req, res) => {
+const getPendingClubs = asyncHandler(async (req, res) => {
   const clubs = await Club.find({ isApproved: false }).populate(
     "admin",
     "name email",
@@ -168,7 +168,7 @@ const getPendingClubs = asynchandler(async (req, res) => {
   res.status(200).json({ success: true, data: clubs });
 });
 
-const approveClub = asynchandler(async (req, res) => {
+const approveClub = asyncHandler(async (req, res) => {
   const club = await Club.findById(req.params.id);
   if (!club) {
     res.status(404);
@@ -189,7 +189,7 @@ const approveClub = asynchandler(async (req, res) => {
   res.status(200).json({ success: true, data: club });
 });
 
-const rejectClub = asynchandler(async (req, res) => {
+const rejectClub = asyncHandler(async (req, res) => {
   const club = await Club.findById(req.params.id);
   if (!club) {
     res.status(404);
@@ -206,7 +206,7 @@ const rejectClub = asynchandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Club rejected" });
 });
 
-const getSystemStats = async (req, res) => {
+const getSystemStats = asyncHandler(async (req, res) => {
   try {
     const [totalClubs, totalUsers, pendingClubs] = await Promise.all([
       Club.countDocuments({ isApproved: true }),
@@ -226,7 +226,7 @@ const getSystemStats = async (req, res) => {
     console.error("Error fetching system stats:", error);
     res.status(500).json({ message: "Server error while fetching stats." });
   }
-};
+});
 
 const followClub = asyncHandler(async (req, res) => {
   const club = await Club.findById(req.params.id);

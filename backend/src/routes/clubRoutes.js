@@ -18,6 +18,7 @@ const {
   joinRequestClub,
   acceptRequest,
   rejectRequest,
+  leaveClub,
 } = require("../controllers/clubController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 const { rateLimiter } = require("../middleware/rateLimiter");

@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      select: true,
     },
     isVerified: {
       type: Boolean,
@@ -69,15 +70,12 @@ const userSchema = new mongoose.Schema(
 // Hash password
 
 userSchema.pre("save", async function (next) {
-  if (
-    !this.isModified("password") ||
-    this.isNew ||
-    this.isModified("passwordResetToken")
-  ) {
+  if (!this.isModified("password") || this.isModified("passwordResetToken")) {
     return next();
   }
   try {
-    this.password = await bcrypt.hash(this.password, 10);
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
   } catch (error) {
     return next(error);
   }

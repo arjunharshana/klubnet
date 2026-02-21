@@ -6,6 +6,7 @@ const {
 } = require("../utils/sendEmail");
 const crypto = require("crypto");
 const cloudinary = require("../config/cloudinary");
+const asyncHandler = require("express-async-handler");
 
 // Register a new user
 const registerUser = async (req, res) => {
@@ -89,7 +90,8 @@ const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
+    console.log("user found:", user);
     if (user && (await user.matchPassword(password))) {
       if (!user.isVerified) {
         return res
@@ -191,7 +193,7 @@ const forgotPassword = async (req, res) => {
     const userToClear = await User.findOne({ email });
     if (userToClear) {
       userToClear.passwordResetToken = undefined;
-      userToClear.passwordResetExpires = undefined;
+      userToClear.passwordResetTokenExpiry = undefined;
       await userToClear.save({ validateBeforeSave: false });
     }
     res.status(500).json({ message: "Server error" });
