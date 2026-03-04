@@ -106,6 +106,7 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         isVerified: user.isVerified,
+        roles: user.roles,
       });
     } else {
       res.status(401).json({ message: "Invalid email or password" });
@@ -132,6 +133,7 @@ const getUserProfile = async (req, res) => {
       name: user.name,
       email: user.email,
       isVerified: user.isVerified,
+      roles: user.roles,
     });
   } else {
     res.status(404).json({ message: "User not found" });

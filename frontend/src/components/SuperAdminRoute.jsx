@@ -7,8 +7,7 @@ const SuperAdminRoute = () => {
 
   if (loading) return <div className="p-10 text-center">Loading...</div>;
 
-  // Check if logged in AND if role is 'superadmin'
-  if (user && user.role === "superadmin") {
+  if (user && user?.roles?.includes("superadmin")) {
     return <Outlet />;
   }
 

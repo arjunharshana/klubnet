@@ -17,7 +17,17 @@ const clubSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["Sports", "Arts", "Technology", "Literature", "Music", "Other"],
+      enum: [
+        "Sports",
+        "Arts",
+        "Tech",
+        "Literature",
+        "Music",
+        "Social",
+        "Other",
+        "Business",
+        "Music",
+      ],
     },
     imageUrl: {
       type: String,

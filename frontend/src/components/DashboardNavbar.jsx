@@ -9,6 +9,7 @@ const DashboardNavbar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Local state for dropdowns
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -20,11 +21,17 @@ const DashboardNavbar = () => {
 
     const fetchNotifications = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL;
+        // FIX 1: Support both URL and URI just like the Dashboard
+        const API_URL =
+          import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+
         const response = await axios.get(`${API_URL}/api/notifications`, {
           withCredentials: true,
         });
-        setNotifications(response.data.data);
+
+        // FIX 2: Bulletproof Array Check
+        const rawData = response.data?.data || response.data;
+        setNotifications(Array.isArray(rawData) ? rawData : []);
       } catch (error) {
         console.error("Error fetching notifications:", error);
       }
@@ -32,7 +39,10 @@ const DashboardNavbar = () => {
 
     fetchNotifications();
   }, [user]);
-  const unreadCount = (notifications || []).filter((n) => !n.isRead).length;
+
+  // FIX 3: Safe filtering
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+  const unreadCount = safeNotifications.filter((n) => !n.isRead).length;
 
   const handleLogout = () => {
     logout();
@@ -44,8 +54,6 @@ const DashboardNavbar = () => {
     setShowProfileMenu(false);
     setShowNotifications(false);
   };
-
-  const location = useLocation(); // <--- Add this hook
 
   const getLinkClass = (path) => {
     return location.pathname === path
@@ -63,7 +71,8 @@ const DashboardNavbar = () => {
 
     // mark as read in backend
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL =
+        import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
       await axios.put(
         `${API_URL}/api/notifications/${notification._id}/read`,
         {},
@@ -80,14 +89,15 @@ const DashboardNavbar = () => {
       console.error("Error marking notification as read:", error);
     }
   };
+
   return (
     <>
-      {/* */}
+      {/* Overlay to close dropdowns when clicking outside */}
       {(showProfileMenu || showNotifications) && (
         <div className="fixed inset-0 z-40" onClick={closeAll}></div>
       )}
 
-      {/*Navbar */}
+      {/* Navbar */}
       <header className="sticky top-0 z-50 w-full border-b border-border-light/80 dark:border-border-dark/60 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl">
         <div className="px-6 md:px-10 py-3 flex items-center justify-between gap-4">
           {/* Logo */}
@@ -165,8 +175,8 @@ const DashboardNavbar = () => {
                   </div>
 
                   <div className="max-h-64 overflow-y-auto p-0">
-                    {notifications.length > 0 ? (
-                      notifications.map((n) => (
+                    {safeNotifications.length > 0 ? (
+                      safeNotifications.map((n) => (
                         <div
                           key={n._id}
                           className={`p-3 border-b border-border-light/50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer flex gap-3 items-start ${
@@ -246,12 +256,12 @@ const DashboardNavbar = () => {
                     >
                       <User size={16} /> Profile
                     </Link>
-                    {user?.role === "superadmin" && (
+                    {user?.roles?.includes("superadmin") && (
                       <Link
                         to="/super-admin"
                         className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 text-purple-600 dark:text-purple-400 transition-colors"
                       >
-                        <Shield size={16} /> Admin Console
+                        Admin Console
                       </Link>
                     )}
                     <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left text-foreground-light dark:text-foreground-dark">
