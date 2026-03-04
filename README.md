@@ -86,8 +86,9 @@ EMAIL_PASS=your_app_password
 ```
 
 ### Frontend (/frontend/.env)
+
 ```bash
-VITE_API_URL=http://localhost:5000
+VITE_API_URI=http://localhost:5000
 ```
 
 ## Installation & Setup
@@ -101,13 +102,15 @@ cd klubnet
 
 2. Backend Setup
 
-  Navigate to the backend folder and install dependencies.
+Navigate to the backend folder and install dependencies.
+
 ```bash
 cd backend
 npm install
 ```
 
-  Start the server:
+Start the server:
+
 ```bash
 # Development Mode (Nodemon)
 npm run dev
@@ -115,24 +118,27 @@ npm run dev
 npm start
 ```
 
-  Server runs on http://localhost:5000
+Server runs on http://localhost:5000
 
 3. Frontend Setup
 
-  Open a new terminal, navigate to the frontend folder.
+Open a new terminal, navigate to the frontend folder.
+
 ```bash
 cd frontend
 npm install
 ```
 
-  Start the React app:
+Start the React app:
+
 ```bash
 npm run dev
 ```
 
-  App runs on http://localhost:5173
+App runs on http://localhost:5173
 
 ## Project Structure
+
 ```bash
 klubnet/
 ├── backend/
@@ -163,6 +169,7 @@ klubnet/
 - Role-Based Access Control (RBAC): Middleware to protect Admin/Superadmin routes.
 
 ## Upcoming Features
+
 - Real-Time Chat: Club-specific group chats and direct messaging between members using Socket.io.
 
 - Advanced Scheduling: Recurring events and integration with Google Calendar / Outlook.
