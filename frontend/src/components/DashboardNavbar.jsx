@@ -32,8 +32,7 @@ const DashboardNavbar = () => {
 
     fetchNotifications();
   }, [user]);
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = (notifications || []).filter((n) => !n.isRead).length;
 
   const handleLogout = () => {
     logout();

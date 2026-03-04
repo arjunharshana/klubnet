@@ -52,17 +52,17 @@ function RegisterPage() {
         return;
       }
 
-      const emailDomainRegex = /^[^\s@]+@[^\s@]+\.(edu|ac\.[a-z]{2,})$/i;
-      if (!emailDomainRegex.test(trimmedEmail)) {
-        setError("Please use a valid university email (.edu or .ac.xx).");
-        return;
-      }
+      // const emailDomainRegex = /^[^\s@]+@[^\s@]+\.(edu|ac\.[a-z]{2,})$/i;
+      // if (!emailDomainRegex.test(trimmedEmail)) {
+      //   setError("Please use a valid university email (.edu or .ac.xx).");
+      //   return;
+      // }
 
       const passwordComplexityRegex =
         /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/;
       if (!passwordComplexityRegex.test(formData.password)) {
         setError(
-          "Password must be 8+ chars, one uppercase letter, one lowercase letter, one number & special character (!@#$)."
+          "Password must be 8+ chars, one uppercase letter, one lowercase letter, one number & special character (!@#$).",
         );
         setLoading(false);
         return;
@@ -111,12 +111,11 @@ function RegisterPage() {
 
         login(response.data);
 
-        // Redirect to Dashboard or Home after successful verification
-        Navigate("/");
+        Navigate("/dashboard");
       } catch (serverError) {
         setError(
           serverError.response?.data?.message ||
-            "Invalid OTP. Please try again."
+            "Invalid OTP. Please try again.",
         );
       }
     }
@@ -355,8 +354,8 @@ function RegisterPage() {
                       {loading
                         ? "Processing..."
                         : step === 2
-                        ? "Finish"
-                        : "Continue"}
+                          ? "Finish"
+                          : "Continue"}
                     </span>
 
                     {/* loading spinner*/}

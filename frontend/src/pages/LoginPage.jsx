@@ -34,11 +34,11 @@ function LoginPage() {
       return;
     }
 
-    const emailDomainRegex = /^[^\s@]+@[^\s@]+\.(edu|ac\.[a-z]{2,})$/i;
-    if (!emailDomainRegex.test(trimmedEmail)) {
-      setError("Please use a valid university email (.edu or .ac.xx).");
-      return;
-    }
+    // const emailDomainRegex = /^[^\s@]+@[^\s@]+\.(edu|ac\.[a-z]{2,})$/i;
+    // if (!emailDomainRegex.test(trimmedEmail)) {
+    //   setError("Please use a valid university email (.edu or .ac.xx).");
+    //   return;
+    // }
 
     try {
       const apiUri = import.meta.env.VITE_API_URI;
@@ -53,7 +53,7 @@ function LoginPage() {
 
       login(response.data);
 
-      navigate("/");
+      navigate("/dashboard");
     } catch (err) {
       setError(
         err.response?.data?.message || "Login failed. Please try again.",

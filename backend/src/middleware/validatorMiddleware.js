@@ -25,7 +25,7 @@ const validateRegistration = [
     .isEmail()
     .withMessage("Invalid email address")
     .normalizeEmail()
-    .matches(/\.(edu|ac\.in)$/)
+    // .matches(/\.(edu|ac\.in)$/)
     .withMessage("Email must be from an educational domain"),
 
   body("password")
@@ -33,7 +33,7 @@ const validateRegistration = [
     .withMessage("Password must be at least 8 characters long")
     .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).+$/)
     .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
     ),
 
   handleValidationErrors,
@@ -46,7 +46,7 @@ const validateLogin = [
     .isEmail()
     .withMessage("Invalid email address")
     .normalizeEmail()
-    .matches(/\.(edu|ac\.in)$/)
+    // .matches(/\.(edu|ac\.in)$/)
     .withMessage("Email must be from an educational domain"),
 
   body("password").notEmpty().withMessage("Password is required"),
@@ -61,7 +61,7 @@ const validateOTP = [
     .isEmail()
     .withMessage("Invalid email address")
     .normalizeEmail()
-    .matches(/\.(edu|ac\.in)$/)
+    // .matches(/\.(edu|ac\.in)$/)
     .withMessage("Email must be from an educational domain"),
 
   body("otp")
@@ -81,7 +81,7 @@ const validateResendOTP = [
     .isEmail()
     .withMessage("Invalid email address")
     .normalizeEmail()
-    .matches(/\.(edu|ac\.in)$/)
+    // .matches(/\.(edu|ac\.in)$/)
     .withMessage("Email must be from an educational domain"),
 
   handleValidationErrors,
@@ -93,7 +93,7 @@ const validateEmail = [
     .isEmail()
     .withMessage("Invalid email address")
     .normalizeEmail()
-    .matches(/\.(edu|ac\.in)$/)
+    // .matches(/\.(edu|ac\.in)$/)
     .withMessage("Email must be from an educational domain"),
 
   handleValidationErrors,
@@ -105,7 +105,7 @@ const validatePasswordReset = [
     .withMessage("Password must be at least 8 characters long")
     .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).+$/)
     .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
     ),
 
   body("confirmPassword").custom((value, { req }) => {

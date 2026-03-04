@@ -47,19 +47,21 @@ const Dashboard = () => {
         ]);
 
         // filter my clubs
-        const allClubs = clubsRes.data.data;
+        const allClubs = clubsRes.data?.data || clubsRes.data || [];
         const joinedClubs = allClubs.filter(
           (club) =>
-            club.members.some(
+            club.members?.some(
               (member) => (member._id || member) === user._id,
             ) || (club.admin?._id || club.admin) === user._id,
         );
         setMyClubs(joinedClubs);
 
         //set events
-        const sortedEvents = eventsRes.data.data
+        const fetchedEvents = eventsRes.data?.data || eventsRes.data || [];
+        const sortedEvents = fetchedEvents
           .sort((a, b) => new Date(a.date) - new Date(b.date))
           .filter((e) => new Date(e.date) >= new Date());
+
         setUpcomingEvents(sortedEvents);
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
@@ -217,9 +219,9 @@ const Dashboard = () => {
 
                 {/* calendaar */}
                 <div className="grid grid-cols-7 gap-y-4 text-center text-sm">
-                  {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
+                  {["S", "M", "T", "W", "T", "F", "S"].map((d, index) => (
                     <div
-                      key={d}
+                      key={`${d}-${index}`}
                       className="text-muted-light/60 font-bold text-xs"
                     >
                       {d}
