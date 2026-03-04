@@ -34,7 +34,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL;
+        const API_URL = import.meta.env.VITE_API_URI;
 
         // Parallel fetching for speed
         const [clubsRes, eventsRes] = await Promise.all([

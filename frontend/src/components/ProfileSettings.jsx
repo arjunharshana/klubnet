@@ -65,7 +65,7 @@ const ProfileSettings = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       const data = new FormData();
 
       Object.keys(formData).forEach((key) => data.append(key, formData[key]));

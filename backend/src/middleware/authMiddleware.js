@@ -20,7 +20,7 @@ const authMiddleware = async (req, res, next) => {
 };
 
 const superAdmin = (req, res, next) => {
-  if (req.user && req.user.roles === "superadmin") {
+  if (req.user && req.user.roles?.includes("superadmin")) {
     next();
   } else {
     res.status(401);

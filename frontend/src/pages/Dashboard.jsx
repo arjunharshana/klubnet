@@ -38,8 +38,7 @@ const Dashboard = () => {
       if (!user) return;
 
       try {
-        const API_URL =
-          import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+        const API_URL = import.meta.env.VITE_API_URI;
 
         const [clubsRes, eventsRes] = await Promise.all([
           axios.get(`${API_URL}/api/clubs`),

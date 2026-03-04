@@ -56,7 +56,7 @@ const ClubDetails = () => {
   // Fetch Data Function
   const fetchClubData = useCallback(async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       const { data } = await axios.get(`${API_URL}/api/clubs/${id}`);
       setClub(data.data);
       const eventsRes = await axios.get(`${API_URL}/api/events/club/${id}`);
@@ -79,7 +79,7 @@ const ClubDetails = () => {
     if (!user) return navigate("/login");
     setActionLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       const endpoint = isFollower ? "unfollow" : "follow";
       await axios.put(
         `${API_URL}/api/clubs/${id}/${endpoint}`,
@@ -98,7 +98,7 @@ const ClubDetails = () => {
     if (!user) return navigate("/login");
     setActionLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       await axios.post(
         `${API_URL}/api/clubs/${id}/join`,
         {},
@@ -116,7 +116,7 @@ const ClubDetails = () => {
     if (!window.confirm("Are you sure you want to leave this club?")) return;
     setActionLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       await axios.put(
         `${API_URL}/api/clubs/${id}/leave`,
         {},
@@ -134,7 +134,7 @@ const ClubDetails = () => {
 
   const handleManageRequest = async (userId, action) => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       // action is either 'accept' or 'reject'
       await axios.put(
         `${API_URL}/api/clubs/${id}/requests/${userId}/${action}`,
@@ -151,7 +151,7 @@ const ClubDetails = () => {
 
   const refreshEvents = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       const res = await axios.get(`${API_URL}/api/events/club/${id}`);
       setEvents(res.data.data);
     } catch (err) {
@@ -162,7 +162,7 @@ const ClubDetails = () => {
   const handleRSVP = async (eventId) => {
     if (!user) return navigate("/login");
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       await axios.put(
         `${API_URL}/api/events/${eventId}/join`,
         {},
@@ -182,7 +182,7 @@ const ClubDetails = () => {
     )
       return;
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       await axios.delete(`${API_URL}/api/events/${eventId}`, {
         withCredentials: true,
       });

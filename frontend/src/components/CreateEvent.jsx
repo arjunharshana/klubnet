@@ -66,7 +66,7 @@ const CreateEvent = ({
         clubId: clubId, // Pass the club ID
       };
 
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       if (isEditMode) {
         // update existing event
         await axios.put(`${API_URL}/api/events/${eventToEdit._id}`, payload, {

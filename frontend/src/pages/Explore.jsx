@@ -45,7 +45,7 @@ const Explore = () => {
     const fetchClubs = async () => {
       setLoading(true);
       try {
-        const API_URL = import.meta.env.VITE_API_URL;
+        const API_URL = import.meta.env.VITE_API_URI;
 
         // Build query params
         const params = new URLSearchParams();

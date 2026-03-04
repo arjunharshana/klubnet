@@ -29,7 +29,7 @@ const SuperAdminDashboard = () => {
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL;
+        const API_URL = import.meta.env.VITE_API_URI;
         // fetch pending clubs
         const pendingRes = await axios.get(
           `${API_URL}/api/clubs/admin/pending`,
@@ -64,7 +64,7 @@ const SuperAdminDashboard = () => {
   // handler functions
   const handleApprove = async (id) => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       await axios.put(
         `${API_URL}/api/clubs/${id}/approve`,
         {},
@@ -83,7 +83,7 @@ const SuperAdminDashboard = () => {
   const handleReject = async (id) => {
     if (!window.confirm("Are you sure you want to reject this club?")) return;
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URI;
       await axios.delete(`${API_URL}/api/clubs/${id}/reject`, {
         withCredentials: true,
       });

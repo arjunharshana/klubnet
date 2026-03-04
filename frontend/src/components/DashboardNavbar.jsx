@@ -21,15 +21,12 @@ const DashboardNavbar = () => {
 
     const fetchNotifications = async () => {
       try {
-        // FIX 1: Support both URL and URI just like the Dashboard
-        const API_URL =
-          import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+        const API_URL = import.meta.env.VITE_API_URI;
 
         const response = await axios.get(`${API_URL}/api/notifications`, {
           withCredentials: true,
         });
 
-        // FIX 2: Bulletproof Array Check
         const rawData = response.data?.data || response.data;
         setNotifications(Array.isArray(rawData) ? rawData : []);
       } catch (error) {
@@ -71,8 +68,7 @@ const DashboardNavbar = () => {
 
     // mark as read in backend
     try {
-      const API_URL =
-        import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+      const API_URL = import.meta.env.VITE_API_URI;
       await axios.put(
         `${API_URL}/api/notifications/${notification._id}/read`,
         {},
