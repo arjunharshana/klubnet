@@ -686,17 +686,20 @@ const ClubDetails = () => {
                 <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-5 border border-white/50 dark:border-gray-700">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-2 rounded-xl bg-purple-50 dark:bg-primary/10">
-                      <div className="text-2xl font-bold text-primary">3</div>
+                      <div className="text-2xl font-bold text-primary">
+                        {club.events?.length || 0}
+                      </div>
                       <div className="text-xs text-muted-light dark:text-muted-dark font-medium">
-                        Events/Mo
+                        Events Organized
                       </div>
                     </div>
                     <div className="text-center p-2 rounded-xl bg-blue-50 dark:bg-blue-900/10">
                       <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        24
+                        {new Date(club.createdAt).getFullYear() ||
+                          new Date().getFullYear()}
                       </div>
                       <div className="text-xs text-muted-light dark:text-muted-dark font-medium">
-                        Projects
+                        Year Established
                       </div>
                     </div>
                   </div>
