@@ -29,7 +29,7 @@ const clubSchema = new mongoose.Schema(
         "Music",
       ],
     },
-    imageUrl: {
+    image: {
       type: String,
       default: "https://example.com/default-club-image.png",
     },

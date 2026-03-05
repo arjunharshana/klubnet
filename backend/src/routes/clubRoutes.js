@@ -18,6 +18,7 @@ const {
   joinRequestClub,
   acceptRequest,
   rejectRequest,
+  updateClub,
   leaveClub,
 } = require("../controllers/clubController");
 const { authMiddleware } = require("../middleware/authMiddleware");
@@ -33,10 +34,12 @@ router.post(
   rateLimiter,
   createClub,
 );
+
 router.delete("/:id", authMiddleware, deleteClub);
 
 router.put("/:id/follow", authMiddleware, followClub);
 router.put("/:id/unfollow", authMiddleware, unfollowClub);
+router.put("/:id", authMiddleware, upload.single("image"), updateClub);
 router.post("/:id/join", authMiddleware, joinRequestClub);
 
 router.put("/:id/requests/:userId/accept", authMiddleware, acceptRequest);

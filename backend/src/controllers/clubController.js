@@ -339,6 +339,55 @@ const rejectRequest = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Request rejected" });
 });
 
+const updateClub = async (req, res) => {
+  try {
+    const club = await Club.findById(req.params.id);
+
+    if (!club) {
+      return res.status(404).json({ message: "Club not found" });
+    }
+
+    if (
+      club.admin.toString() !== req.user._id.toString() &&
+      !req.user.roles?.includes("superadmin")
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to edit this club" });
+    }
+
+    club.name = req.body.name || club.name;
+    club.category = req.body.category || club.category;
+    club.description = req.body.description || club.description;
+
+    if (req.file) {
+      try {
+        const cloudinary = require("../config/cloudinary");
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "klubnet/clubs",
+          width: 800,
+          crop: "scale",
+        });
+        club.image = result.secure_url;
+      } catch (uploadError) {
+        console.error("Image upload failed:", uploadError);
+        return res.status(500).json({ message: "Failed to upload new image" });
+      }
+    }
+
+    const updatedClub = await club.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Club updated successfully",
+      data: updatedClub,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error while updating club" });
+  }
+};
+
 module.exports = {
   createClub,
   getAllClubs,
@@ -354,4 +403,5 @@ module.exports = {
   joinRequestClub,
   acceptRequest,
   rejectRequest,
+  updateClub,
 };

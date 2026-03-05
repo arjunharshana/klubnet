@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import CreateEvent from "../components/CreateEvent";
 import ConfirmDialog from "../components/ConfirmDialog";
+import EditClubModal from "../components/EditClubModal";
 
 const ClubDetails = () => {
   const { id } = useParams();
@@ -40,6 +41,7 @@ const ClubDetails = () => {
   const [showEvents, setShowEvents] = useState(false);
   const [events, setEvents] = useState([]);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [showEditClub, setShowEditClub] = useState(false);
 
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
@@ -229,7 +231,6 @@ const ClubDetails = () => {
         { withCredentials: true },
       );
       refreshEvents();
-      // Notice we don't know if they joined or left from the response directly, so we just show a generic success
       showToast("Event registration updated!", "success");
     } catch {
       showToast("Failed to RSVP to event", "error");
@@ -257,6 +258,35 @@ const ClubDetails = () => {
           showToast("Event deleted successfully", "success");
         } catch {
           showToast("Failed to delete event", "error");
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
+  };
+
+  const handleDeleteClubClick = () => {
+    setModalConfig({
+      isOpen: true,
+      title: "Delete Club",
+      message:
+        "Are you absolutely sure you want to delete this entire club? All events, members, and data will be permanently removed. This action cannot be undone.",
+      confirmText: "Yes, Delete Club",
+      isDanger: true,
+      action: async () => {
+        setActionLoading(true);
+        try {
+          const API_URL = import.meta.env.VITE_API_URI;
+          await axios.delete(`${API_URL}/api/clubs/${id}`, {
+            withCredentials: true,
+          });
+          setModalConfig((prev) => ({ ...prev, isOpen: false }));
+          navigate("/dashboard");
+        } catch (err) {
+          showToast(
+            err.response?.data?.message || "Failed to delete club",
+            "error",
+          );
         } finally {
           setActionLoading(false);
         }
@@ -526,9 +556,20 @@ const ClubDetails = () => {
                 <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl shadow-primary/5 border border-white/50 dark:border-gray-700">
                   <div className="flex flex-col gap-3 mb-6">
                     {isAdmin ? (
-                      <button className="w-full py-3.5 px-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 cursor-default">
-                        <Edit size={20} /> Manage Club
-                      </button>
+                      <div className="flex flex-col gap-3">
+                        <button
+                          onClick={() => setShowEditClub(true)}
+                          className="w-full py-3.5 px-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 bg-primary text-white hover:bg-primary-hover shadow-lg shadow-primary/25 transition-all active:scale-[0.98]"
+                        >
+                          <Edit size={18} /> Edit Club Details
+                        </button>
+                        <button
+                          onClick={handleDeleteClubClick}
+                          className="w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-red-50 dark:bg-red-900/10 text-red-600 border border-red-200 dark:border-red-900 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all active:scale-[0.98]"
+                        >
+                          <Trash2 size={16} /> Delete Club
+                        </button>
+                      </div>
                     ) : (
                       <>
                         {/* Request to Join / Leave / Pending */}
@@ -765,6 +806,18 @@ const ClubDetails = () => {
                 : "Event Created Successfully!",
               "success",
             );
+          }}
+        />
+      )}
+
+      {showEditClub && (
+        <EditClubModal
+          club={club}
+          onClose={() => setShowEditClub(false)}
+          onSuccess={() => {
+            fetchClubData();
+            setShowEditClub(false);
+            showToast("Club details updated successfully!", "success");
           }}
         />
       )}
