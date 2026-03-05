@@ -11,10 +11,11 @@ const DashboardNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Local state for dropdowns
+  // Local state for dropdowns & search
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [searchQuery, setSearchQuery] = useState(""); // <-- Added Search State
 
   useEffect(() => {
     if (!user) return;
@@ -37,7 +38,7 @@ const DashboardNavbar = () => {
     fetchNotifications();
   }, [user]);
 
-  // FIX 3: Safe filtering
+  // Safe filtering
   const safeNotifications = Array.isArray(notifications) ? notifications : [];
   const unreadCount = safeNotifications.filter((n) => !n.isRead).length;
 
@@ -63,10 +64,8 @@ const DashboardNavbar = () => {
 
     if (notification.link) navigate(notification.link);
 
-    // If already read, do nothing
     if (notification.isRead) return;
 
-    // mark as read in backend
     try {
       const API_URL = import.meta.env.VITE_API_URI;
       await axios.put(
@@ -75,7 +74,6 @@ const DashboardNavbar = () => {
         { withCredentials: true },
       );
 
-      // update local state
       setNotifications((prev) =>
         prev.map((n) =>
           n._id === notification._id ? { ...n, isRead: true } : n,
@@ -83,6 +81,16 @@ const DashboardNavbar = () => {
       );
     } catch (error) {
       console.error("Error marking notification as read:", error);
+    }
+  };
+
+  // <-- SEARCH HANDLER added here
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to explore page with the search query in the URL
+      navigate(`/explore?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery(""); // Optional: clear the bar after searching
     }
   };
 
@@ -110,16 +118,19 @@ const DashboardNavbar = () => {
 
           {/* Center: Search (Hidden on mobile) */}
           <div className="hidden md:flex flex-1 max-w-md mx-4 z-50">
-            <div className="relative w-full">
+            {/* Wrapped input in a form so hitting 'Enter' submits it */}
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted-light">
                 search
               </span>
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search clubs, events..."
                 className="w-full h-10 pl-10 pr-4 rounded-full bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-foreground-light dark:text-foreground-dark"
               />
-            </div>
+            </form>
           </div>
 
           <nav className="hidden lg:flex items-center gap-6 text-sm mr-auto ml-6 z-50">
@@ -228,10 +239,18 @@ const DashboardNavbar = () => {
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="size-9 rounded-full bg-gradient-to-br from-primary to-purple-600 p-[2px] cursor-pointer shadow-md transition-transform hover:scale-105"
               >
-                <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 flex items-center justify-center">
-                  <span className="font-bold text-primary text-sm">
-                    {(user?.name?.charAt(0) || "U").toUpperCase()}
-                  </span>
+                <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+                  {user?.image ? (
+                    <img
+                      src={user.image}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-bold text-primary text-sm">
+                      {(user?.name?.charAt(0) || "U").toUpperCase()}
+                    </span>
+                  )}
                 </div>
               </button>
 
@@ -257,7 +276,7 @@ const DashboardNavbar = () => {
                         to="/super-admin"
                         className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 text-purple-600 dark:text-purple-400 transition-colors"
                       >
-                        Admin Console
+                        <Shield size={16} /> Admin Console
                       </Link>
                     )}
                     <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left text-foreground-light dark:text-foreground-dark">

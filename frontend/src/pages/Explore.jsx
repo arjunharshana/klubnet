@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import DashboardNavbar from "../components/DashboardNavbar";
 import {
@@ -28,10 +28,14 @@ const CATEGORIES = [
 const Explore = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
+  const searchParams = new URLSearchParams(location.search);
+  const initialQuery = searchParams.get("search") || "";
+
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
 
   useEffect(() => {
@@ -45,11 +49,11 @@ const Explore = () => {
     const fetchClubs = async () => {
       setLoading(true);
       try {
-        const API_URL = import.meta.env.VITE_API_URI;
+        const API_URL =
+          import.meta.env.VITE_API_URI || import.meta.env.VITE_API_URL;
 
-        // Build query params
         const params = new URLSearchParams();
-        if (search) params.append("search", search);
+        if (searchQuery) params.append("search", searchQuery);
         if (category && category !== "All") params.append("category", category);
 
         const { data } = await axios.get(
@@ -68,7 +72,13 @@ const Explore = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [search, category]);
+  }, [searchQuery, category]);
+
+  const filteredClubs = clubs.filter(
+    (club) =>
+      club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      club.category.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const getUserStatus = (club) => {
     if (!user) return null;
@@ -86,8 +96,8 @@ const Explore = () => {
 
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
+      <div className="flex items-center justify-center min-h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -118,9 +128,9 @@ const Explore = () => {
               />
             </div>
             <input
-              value={search}
+              value={searchQuery}
               placeholder="Search for clubs"
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-11 pr-4 py-4 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark rounded-2xl text-foreground-light dark:text-foreground-dark placeholder-muted-light/70 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm outline-none transition-all text-base hover:shadow-md"
               type="text"
             />
@@ -146,12 +156,13 @@ const Explore = () => {
 
         {/* clubs grid */}
         {loading ? (
-          <div className="text-center py-20 text-muted-light">
+          <div className="text-center py-20 text-muted-light flex flex-col items-center justify-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             Loading clubs...
           </div>
-        ) : clubs.length > 0 ? (
+        ) : filteredClubs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {clubs.map((club) => {
+            {filteredClubs.map((club) => {
               const status = getUserStatus(club); // Calculate status once
 
               return (
@@ -161,13 +172,18 @@ const Explore = () => {
                 >
                   {/* card image */}
                   <div
-                    className="h-48 bg-cover bg-center relative overflow-hidden bg-gray-200 dark:bg-gray-800"
+                    className="h-48 bg-cover bg-center relative overflow-hidden bg-gray-200 dark:bg-gray-800 flex items-center justify-center"
                     style={{
-                      backgroundImage: `url(${
-                        club.image || "https://via.placeholder.com/300"
-                      })`,
+                      backgroundImage: club.image
+                        ? `url(${club.image})`
+                        : undefined,
                     }}
                   >
+                    {!club.image && (
+                      <span className="text-4xl font-bold text-gray-400">
+                        {club.name.charAt(0)}
+                      </span>
+                    )}
                     <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
 
                     {/* Top Right Badges */}

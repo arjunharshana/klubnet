@@ -262,7 +262,6 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   // handle image upload
   if (req.file) {
     try {
-      // Upload to Cloudinary
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "klubnet/users",
         width: 300,
