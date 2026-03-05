@@ -68,7 +68,6 @@ const CreateEvent = ({
 
       const API_URL = import.meta.env.VITE_API_URI;
       if (isEditMode) {
-        // update existing event
         await axios.put(`${API_URL}/api/events/${eventToEdit._id}`, payload, {
           withCredentials: true,
         });
@@ -78,7 +77,7 @@ const CreateEvent = ({
         });
       }
 
-      onEventCreated(); // Refresh the list
+      onEventCreated();
       onClose();
     } catch (err) {
       console.error(err);

@@ -25,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import CreateEvent from "../components/CreateEvent";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const ClubDetails = () => {
   const { id } = useParams();
@@ -38,6 +39,16 @@ const ClubDetails = () => {
   const [showEvents, setShowEvents] = useState(false);
   const [events, setEvents] = useState([]);
   const [editingEvent, setEditingEvent] = useState(null);
+
+  // Dynamic Modal State
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "",
+    isDanger: false,
+    action: null,
+  });
 
   // check if user is in array of members/followers/requests
   const isUserInArray = (array) => {
@@ -56,7 +67,8 @@ const ClubDetails = () => {
   // Fetch Data Function
   const fetchClubData = useCallback(async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URI;
+      const API_URL =
+        import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
       const { data } = await axios.get(`${API_URL}/api/clubs/${id}`);
       setClub(data.data);
       const eventsRes = await axios.get(`${API_URL}/api/events/club/${id}`);
@@ -74,12 +86,12 @@ const ClubDetails = () => {
   }, [fetchClubData]);
 
   // membership actions
-
   const handleFollowToggle = async () => {
     if (!user) return navigate("/login");
     setActionLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URI;
+      const API_URL =
+        import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
       const endpoint = isFollower ? "unfollow" : "follow";
       await axios.put(
         `${API_URL}/api/clubs/${id}/${endpoint}`,
@@ -98,7 +110,8 @@ const ClubDetails = () => {
     if (!user) return navigate("/login");
     setActionLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URI;
+      const API_URL =
+        import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
       await axios.post(
         `${API_URL}/api/clubs/${id}/join`,
         {},
@@ -112,30 +125,41 @@ const ClubDetails = () => {
     }
   };
 
-  const handleLeaveClub = async () => {
-    if (!window.confirm("Are you sure you want to leave this club?")) return;
-    setActionLoading(true);
-    try {
-      const API_URL = import.meta.env.VITE_API_URI;
-      await axios.put(
-        `${API_URL}/api/clubs/${id}/leave`,
-        {},
-        { withCredentials: true },
-      );
-      await fetchClubData();
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to leave club");
-    } finally {
-      setActionLoading(false);
-    }
+  // REPLACED: Opens the Confirmation Modal instead of browser popup
+  const handleLeaveClubClick = () => {
+    setModalConfig({
+      isOpen: true,
+      title: "Leave Club",
+      message:
+        "Are you sure you want to leave this club? You will no longer receive updates or have access to member-only events.",
+      confirmText: "Yes, Leave",
+      isDanger: true,
+      action: async () => {
+        setActionLoading(true);
+        try {
+          const API_URL =
+            import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+          await axios.put(
+            `${API_URL}/api/clubs/${id}/leave`,
+            {},
+            { withCredentials: true },
+          );
+          await fetchClubData();
+          setModalConfig((prev) => ({ ...prev, isOpen: false }));
+        } catch (err) {
+          alert(err.response?.data?.message || "Failed to leave club");
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
   // admin actions
-
   const handleManageRequest = async (userId, action) => {
     try {
-      const API_URL = import.meta.env.VITE_API_URI;
-      // action is either 'accept' or 'reject'
+      const API_URL =
+        import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
       await axios.put(
         `${API_URL}/api/clubs/${id}/requests/${userId}/${action}`,
         {},
@@ -148,10 +172,10 @@ const ClubDetails = () => {
   };
 
   // event actions
-
   const refreshEvents = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URI;
+      const API_URL =
+        import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
       const res = await axios.get(`${API_URL}/api/events/club/${id}`);
       setEvents(res.data.data);
     } catch (err) {
@@ -162,7 +186,8 @@ const ClubDetails = () => {
   const handleRSVP = async (eventId) => {
     if (!user) return navigate("/login");
     try {
-      const API_URL = import.meta.env.VITE_API_URI;
+      const API_URL =
+        import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
       await axios.put(
         `${API_URL}/api/events/${eventId}/join`,
         {},
@@ -174,23 +199,33 @@ const ClubDetails = () => {
     }
   };
 
-  const handleDeleteEvent = async (eventId) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this event? This cannot be undone.",
-      )
-    )
-      return;
-    try {
-      const API_URL = import.meta.env.VITE_API_URI;
-      await axios.delete(`${API_URL}/api/events/${eventId}`, {
-        withCredentials: true,
-      });
-      refreshEvents();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete event");
-    }
+  // REPLACED: Opens the Confirmation Modal instead of browser popup
+  const handleDeleteEventClick = (eventId) => {
+    setModalConfig({
+      isOpen: true,
+      title: "Delete Event",
+      message:
+        "Are you sure you want to delete this event? This action cannot be undone.",
+      confirmText: "Yes, Delete Event",
+      isDanger: true,
+      action: async () => {
+        setActionLoading(true);
+        try {
+          const API_URL =
+            import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+          await axios.delete(`${API_URL}/api/events/${eventId}`, {
+            withCredentials: true,
+          });
+          refreshEvents();
+          setModalConfig((prev) => ({ ...prev, isOpen: false }));
+        } catch (err) {
+          console.error(err);
+          alert("Failed to delete event");
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
   const handleEditEvent = (event) => {
@@ -394,7 +429,7 @@ const ClubDetails = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteEvent(event._id);
+                                  handleDeleteEventClick(event._id); // USING NEW MODAL HANDLER
                                 }}
                                 className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                               >
@@ -463,7 +498,7 @@ const ClubDetails = () => {
                         {/* Request to Join / Leave / Pending */}
                         {isMember ? (
                           <button
-                            onClick={handleLeaveClub}
+                            onClick={handleLeaveClubClick} // USING NEW MODAL HANDLER
                             disabled={actionLoading}
                             className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-900 hover:bg-red-100 active:scale-[0.98]"
                           >
@@ -570,7 +605,6 @@ const ClubDetails = () => {
                           className="flex items-center justify-between bg-white dark:bg-gray-800 p-3 rounded-xl border border-amber-100 dark:border-gray-700 shadow-sm"
                         >
                           <div className="flex-1 min-w-0 mr-2">
-                            {/* Note: Assumes backend populates joinRequests with name, otherwise renders generic */}
                             <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
                               {reqUser.name || "Student"}
                             </p>
@@ -637,6 +671,18 @@ const ClubDetails = () => {
           </div>
         </div>
       </main>
+
+      {/* Reusable Confirmation Modal */}
+      <ConfirmDialog
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={modalConfig.action}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        isDanger={modalConfig.isDanger}
+        isLoading={actionLoading}
+      />
 
       {/* Create/Edit Event Modal */}
       {showEvents && (
