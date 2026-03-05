@@ -38,7 +38,8 @@ const Dashboard = () => {
       if (!user) return;
 
       try {
-        const API_URL = import.meta.env.VITE_API_URI;
+        const API_URL =
+          import.meta.env.VITE_API_URI || import.meta.env.VITE_API_URL;
 
         const [clubsRes, eventsRes] = await Promise.all([
           axios.get(`${API_URL}/api/clubs`),
@@ -80,7 +81,7 @@ const Dashboard = () => {
   if (authLoading || (!user && loading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
-        Loading...
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -121,8 +122,8 @@ const Dashboard = () => {
               </p>
             </div>
 
-            {/* Your Clubs Card */}
-            <div className="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-sm flex flex-col h-[420px] lg:h-[450px]">
+            {/* Your Clubs Card - ADDED HOVER EFFECT */}
+            <div className="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-sm flex flex-col h-[420px] lg:h-[450px] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/20">
               <div className="p-6 pb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold">Your Clubs</h2>
                 <Link
@@ -209,7 +210,8 @@ const Dashboard = () => {
             {/* Empty spacer to align with Col 1 header */}
             <div className="lg:h-[72px] mb-4 hidden lg:block"></div>
 
-            <div className="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-sm p-6 flex flex-col h-auto min-h-[420px] lg:h-[450px]">
+            {/* Calendar Card - ADDED HOVER EFFECT */}
+            <div className="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-sm p-6 flex flex-col h-auto min-h-[420px] lg:h-[450px] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/20">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold">
                   {today.toLocaleString("default", {
@@ -259,7 +261,9 @@ const Dashboard = () => {
                   ></div>
                   <span className="text-sm font-medium">
                     {eventsToday > 0
-                      ? `${eventsToday} events today`
+                      ? eventsToday === 1
+                        ? `${eventsToday} event today`
+                        : `${eventsToday} events today`
                       : "No events today"}
                   </span>
                 </div>
@@ -272,19 +276,17 @@ const Dashboard = () => {
             {/* Header matches height of Col 1 */}
             <div className="lg:h-[72px] mb-4 flex items-end justify-between pb-1">
               <h2 className="text-xl font-bold">Upcoming Events</h2>
-              <button className="size-8 flex items-center justify-center rounded-lg border border-border-light dark:border-border-dark hover:bg-card-light dark:hover:bg-card-dark transition-colors">
-                <Filter size={16} className="text-muted-light" />
-              </button>
             </div>
 
             <div className="flex-1 h-[420px] lg:h-[450px]">
               {upcomingEvents.length > 0 ? (
                 <div className="flex flex-col gap-3 h-full overflow-y-auto pr-1 custom-scrollbar">
                   {upcomingEvents.map((event) => (
+                    // Event Card - ADDED HOVER EFFECT HERE
                     <div
                       key={event._id}
                       onClick={() => navigate(`/clubs/${event.club._id}`)}
-                      className="rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-4 flex gap-4 items-start group hover:border-primary/40 hover:shadow-md transition-all cursor-pointer"
+                      className="rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-4 flex gap-4 items-start group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20 hover:border-primary/40 cursor-pointer"
                     >
                       {/* Date Box */}
                       <div className="flex flex-col items-center justify-center bg-primary/5 dark:bg-primary/10 rounded-lg w-16 h-16 border border-primary/10 shrink-0 group-hover:bg-primary/10 transition-colors text-primary">
@@ -340,8 +342,6 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
-        {/* Bottom Row: Discover New Communities */}
       </main>
     </div>
   );

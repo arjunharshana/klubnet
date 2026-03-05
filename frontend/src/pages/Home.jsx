@@ -1,8 +1,20 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 function Home() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-background text-text font-display selection:bg-primary/20">
       {/* Header */}

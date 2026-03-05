@@ -146,7 +146,9 @@ const getClubById = async (req, res) => {
   try {
     const club = await Club.findById(req.params.id)
       .populate("admin", "name email image")
-      .populate("members", "name email image");
+      .populate("members", "name email image")
+      .populate("joinRequests", "name email image")
+      .populate("followers", "name email image");
 
     if (!club) {
       return res.status(404).json({ message: "Club not found" });
@@ -388,12 +390,44 @@ const updateClub = async (req, res) => {
   }
 };
 
+const removeMember = async (req, res) => {
+  try {
+    const club = await Club.findById(req.params.id);
+    if (!club) return res.status(404).json({ message: "Club not found" });
+
+    if (club.admin.toString() !== req.user._id.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Only the admin can remove members" });
+    }
+
+    if (req.params.userId === club.admin.toString()) {
+      return res
+        .status(400)
+        .json({ message: "Admin cannot remove themselves" });
+    }
+
+    club.members = club.members.filter(
+      (memberId) => memberId.toString() !== req.params.userId,
+    );
+
+    await club.save();
+    res
+      .status(200)
+      .json({ success: true, message: "Member removed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error removing member" });
+  }
+};
+
 module.exports = {
   createClub,
   getAllClubs,
   getClubById,
   leaveClub,
   deleteClub,
+  removeMember,
   getPendingClubs,
   approveClub,
   rejectClub,

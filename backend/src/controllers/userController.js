@@ -91,7 +91,6 @@ const loginUser = async (req, res) => {
 
   try {
     const user = await User.findOne({ email }).select("+password");
-    console.log("user found:", user);
     if (user && (await user.matchPassword(password))) {
       if (!user.isVerified) {
         return res

@@ -81,12 +81,11 @@ function RegisterPage() {
 
       try {
         const apiUri = import.meta.env.VITE_API_URI;
-        const response = await axios.post(`${apiUri}/api/users/register`, {
+        await axios.post(`${apiUri}/api/users/register`, {
           name: trimmedName,
           email: trimmedEmail,
           password: formData.password,
         });
-        console.log("Backend Response:", response.data);
         setStep(2);
       } catch (serverError) {
         setError(serverError.response?.data?.message || "Something went wrong");

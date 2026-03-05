@@ -3,7 +3,7 @@ import axios from "axios";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
-import { Sun, Moon, LogOut, User, Settings, Bell } from "lucide-react";
+import { Sun, Moon, LogOut, User, Settings, Bell, Shield } from "lucide-react";
 
 const DashboardNavbar = () => {
   const { user, logout } = useAuth();
