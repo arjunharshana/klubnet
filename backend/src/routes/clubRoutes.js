@@ -21,6 +21,8 @@ const {
   updateClub,
   leaveClub,
   removeMember,
+  promoteToAdmin,
+  demoteFromAdmin,
 } = require("../controllers/clubController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 const { rateLimiter } = require("../middleware/rateLimiter");
@@ -45,6 +47,8 @@ router.post("/:id/join", authMiddleware, joinRequestClub);
 router.delete("/:id/members/:userId", authMiddleware, removeMember);
 router.put("/:id/requests/:userId/accept", authMiddleware, acceptRequest);
 router.put("/:id/requests/:userId/reject", authMiddleware, rejectRequest);
+router.put("/:id/members/:userId/promote", authMiddleware, promoteToAdmin);
+router.put("/:id/members/:userId/demote", authMiddleware, demoteFromAdmin);
 
 // Superadmin routes
 router.get("/admin/pending", authMiddleware, superAdmin, getPendingClubs);

@@ -33,11 +33,7 @@ const clubSchema = new mongoose.Schema(
       type: String,
       default: "https://example.com/default-club-image.png",
     },
-    admin: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
+    admins: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     members: [
       {
         type: mongoose.Schema.Types.ObjectId,

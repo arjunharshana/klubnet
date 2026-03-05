@@ -25,6 +25,8 @@ import {
   X,
   AlertCircle,
   UserMinus,
+  Crown,
+  ShieldOff,
 } from "lucide-react";
 import CreateEvent from "../components/CreateEvent";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -44,8 +46,7 @@ const ClubDetails = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [showEditClub, setShowEditClub] = useState(false);
 
-  // Modal state for showing members/followers list
-  const [listModalType, setListModalType] = useState(null); // 'members' | 'followers' | null
+  const [listModalType, setListModalType] = useState(null);
 
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
@@ -70,7 +71,6 @@ const ClubDetails = () => {
     }, 3000);
   };
 
-  // check if user is in array of members/followers/requests
   const isUserInArray = (array) => {
     if (!array || !user) return false;
     return array.some(
@@ -78,11 +78,13 @@ const ClubDetails = () => {
     );
   };
 
-  // states
-  const isMember = isUserInArray(club?.members);
+  const isAdmin =
+    club?.admins?.some(
+      (a) => (a._id || a).toString() === user?._id?.toString(),
+    ) || user?.roles?.includes("superadmin");
+  const isMember = isUserInArray(club?.members) || isAdmin;
   const isFollower = isUserInArray(club?.followers);
   const isPending = isUserInArray(club?.joinRequests);
-  const isAdmin = club?.admin?._id === user?._id || club?.admin === user?._id;
 
   // Fetch Data Function
   const fetchClubData = useCallback(async () => {
@@ -105,7 +107,6 @@ const ClubDetails = () => {
     fetchClubData();
   }, [fetchClubData]);
 
-  // membership actions
   const handleFollowToggle = async () => {
     if (!user) return navigate("/login");
     setActionLoading(true);
@@ -161,10 +162,17 @@ const ClubDetails = () => {
       isOpen: true,
       title: "Leave Club",
       message:
-        "Are you sure you want to leave this club? You will no longer receive updates or have access to member-only events.",
+        isAdmin && club.admins?.length === 1
+          ? "You are the ONLY admin left. If you leave, the club will be abandoned. Please promote another member to admin first."
+          : "Are you sure you want to leave this club? You will no longer receive updates or have access to member-only events.",
       confirmText: "Yes, Leave",
       isDanger: true,
       action: async () => {
+        if (isAdmin && club.admins?.length === 1) {
+          setModalConfig((prev) => ({ ...prev, isOpen: false }));
+          return showToast("Cannot leave: You are the last admin.", "error");
+        }
+
         setActionLoading(true);
         try {
           const API_URL =
@@ -177,6 +185,7 @@ const ClubDetails = () => {
           await fetchClubData();
           setModalConfig((prev) => ({ ...prev, isOpen: false }));
           showToast("You have left the club.", "success");
+          navigate("/dashboard");
         } catch (err) {
           showToast(
             err.response?.data?.message || "Failed to leave club",
@@ -189,7 +198,6 @@ const ClubDetails = () => {
     });
   };
 
-  // admin actions
   const handleManageRequest = async (userId, action) => {
     try {
       const API_URL =
@@ -212,7 +220,6 @@ const ClubDetails = () => {
     }
   };
 
-  // Admin removes a specific member
   const handleRemoveMemberClick = (memberId, memberName) => {
     setModalConfig({
       isOpen: true,
@@ -223,10 +230,13 @@ const ClubDetails = () => {
       action: async () => {
         setActionLoading(true);
         try {
-          const API_URL = import.meta.env.VITE_API_URI;
-          await axios.delete(`${API_URL}/api/clubs/${id}/members/${memberId}`, {
-            withCredentials: true,
-          });
+          const API_URL =
+            import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+          await axios.put(
+            `${API_URL}/api/clubs/${id}/members/${memberId}/remove`,
+            {},
+            { withCredentials: true },
+          );
           await fetchClubData();
           setModalConfig((prev) => ({ ...prev, isOpen: false }));
           showToast(`${memberName} has been removed.`, "success");
@@ -242,7 +252,69 @@ const ClubDetails = () => {
     });
   };
 
-  // event actions
+  const handlePromoteAdminClick = (memberId, memberName) => {
+    setModalConfig({
+      isOpen: true,
+      title: "Promote to Admin",
+      message: `Are you sure you want to make ${memberName} an Admin? They will have full control over events, members, and settings.`,
+      confirmText: "Yes, Promote",
+      isDanger: false,
+      action: async () => {
+        setActionLoading(true);
+        try {
+          const API_URL =
+            import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+          await axios.put(
+            `${API_URL}/api/clubs/${id}/admins/${memberId}/promote`,
+            {},
+            { withCredentials: true },
+          );
+          await fetchClubData();
+          setModalConfig((prev) => ({ ...prev, isOpen: false }));
+          showToast(`${memberName} is now an Admin!`, "success");
+        } catch (err) {
+          showToast(
+            err.response?.data?.message || "Failed to promote admin",
+            "error",
+          );
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
+  };
+
+  const handleDemoteAdminClick = (adminId, adminName) => {
+    setModalConfig({
+      isOpen: true,
+      title: "Demote Admin",
+      message: `Are you sure you want to remove Admin privileges from ${adminName}? They will become a regular member.`,
+      confirmText: "Yes, Demote",
+      isDanger: true,
+      action: async () => {
+        setActionLoading(true);
+        try {
+          const API_URL =
+            import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+          await axios.put(
+            `${API_URL}/api/clubs/${id}/admins/${adminId}/demote`,
+            {},
+            { withCredentials: true },
+          );
+          await fetchClubData();
+          setModalConfig((prev) => ({ ...prev, isOpen: false }));
+          showToast(`${adminName} has been demoted to a member.`, "success");
+        } catch (err) {
+          showToast(
+            err.response?.data?.message || "Failed to demote admin",
+            "error",
+          );
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
+  };
   const refreshEvents = async () => {
     try {
       const API_URL =
@@ -344,24 +416,28 @@ const ClubDetails = () => {
 
   if (loading)
     return (
-      <div className="flex h-screen items-center justify-center bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
 
   if (error || !club)
     return (
-      <div className="flex h-screen items-center justify-center text-red-500 bg-background-light dark:bg-background-dark">
+      <div className="flex h-screen items-center justify-center text-red-500 bg-gray-50 dark:bg-gray-900">
         {error || "Club not found"}
       </div>
     );
 
-  // Dynamic Array for the User List Modal
+  const combinedMembersList = [
+    ...(club.admins || []).map((a) => ({ ...a, clubRole: "admin" })),
+    ...(club.members || []).map((m) => ({ ...m, clubRole: "member" })),
+  ];
+
   const currentList =
-    listModalType === "members" ? club.members : club.followers;
+    listModalType === "members" ? combinedMembersList : club.followers;
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark transition-colors duration-300 overflow-x-hidden">
+    <div className="flex min-h-screen w-full flex-col bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-white transition-colors duration-300 overflow-x-hidden">
       <DashboardNavbar />
 
       <main className="flex-grow pb-12 relative">
@@ -373,7 +449,7 @@ const ClubDetails = () => {
 
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           {/* Breadcrumbs */}
-          <div className="py-6 flex items-center gap-2 text-sm text-muted-light dark:text-muted-dark">
+          <div className="py-6 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span
               className="hover:text-primary cursor-pointer"
               onClick={() => navigate("/dashboard")}
@@ -432,7 +508,7 @@ const ClubDetails = () => {
                   </div>
                   <h3 className="text-xl font-bold">About Us</h3>
                 </div>
-                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-muted-light dark:text-muted-dark leading-relaxed whitespace-pre-line">
+                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
                   {club.description}
                 </div>
               </section>
@@ -446,7 +522,7 @@ const ClubDetails = () => {
                     </div>
                     <h3 className="text-xl font-bold">Moments & Activities</h3>
                   </div>
-                  <button className="text-sm font-bold text-primary hover:text-primary-hover flex items-center gap-1 transition-colors">
+                  <button className="text-sm font-bold text-primary hover:text-blue-600 flex items-center gap-1 transition-colors">
                     View Gallery <ArrowRight size={16} />
                   </button>
                 </div>
@@ -504,7 +580,7 @@ const ClubDetails = () => {
                     events.map((event) => (
                       <div
                         key={event._id}
-                        className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl hover:bg-white/40 dark:hover:bg-gray-700/50 border border-transparent hover:border-border-light dark:hover:border-gray-600 transition-all cursor-pointer group"
+                        className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl hover:bg-white/40 dark:hover:bg-gray-700/50 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-all cursor-pointer group"
                       >
                         <div className="flex-shrink-0 w-full sm:w-24 h-24 sm:h-24 rounded-lg bg-primary/10 dark:bg-primary/20 flex flex-col items-center justify-center text-primary border border-primary/20">
                           <span className="text-xs font-bold uppercase tracking-wider">
@@ -542,7 +618,7 @@ const ClubDetails = () => {
                               </button>
                             </div>
                           )}
-                          <p className="text-sm text-muted-light dark:text-muted-dark mb-2 flex items-center gap-2">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">
                             <span className="flex items-center gap-1">
                               <Clock size={14} />{" "}
                               {new Date(event.date).toLocaleTimeString([], {
@@ -555,7 +631,7 @@ const ClubDetails = () => {
                               <MapPin size={14} /> {event.location}
                             </span>
                           </p>
-                          <p className="text-sm text-muted-light dark:text-muted-dark line-clamp-1">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
                             {event.description}
                           </p>
                         </div>
@@ -565,7 +641,7 @@ const ClubDetails = () => {
                               e.stopPropagation();
                               handleRSVP(event._id);
                             }}
-                            className={`px-4 py-2 rounded-lg border text-sm font-bold transition-all shadow-sm ${hasJoinedEvent(event) ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" : "bg-white dark:bg-gray-800 border-border-light dark:border-gray-600 hover:bg-primary/5 hover:text-primary hover:border-primary/30"}`}
+                            className={`px-4 py-2 rounded-lg border text-sm font-bold transition-all shadow-sm ${hasJoinedEvent(event) ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:bg-primary/5 hover:text-primary hover:border-primary/30"}`}
                           >
                             {hasJoinedEvent(event) ? (
                               <span className="flex items-center gap-1">
@@ -597,7 +673,7 @@ const ClubDetails = () => {
                       <div className="flex flex-col gap-3">
                         <button
                           onClick={() => setShowEditClub(true)}
-                          className="w-full py-3.5 px-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 bg-primary text-white hover:bg-primary-hover shadow-lg shadow-primary/25 transition-all active:scale-[0.98]"
+                          className="w-full py-3.5 px-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 bg-primary text-white hover:bg-blue-600 shadow-lg shadow-primary/25 transition-all active:scale-[0.98]"
                         >
                           <Edit size={18} /> Edit Club Details
                         </button>
@@ -630,17 +706,15 @@ const ClubDetails = () => {
                           <button
                             onClick={handleJoinRequest}
                             disabled={actionLoading}
-                            className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-primary hover:bg-primary-hover text-white shadow-lg shadow-primary/25 active:scale-[0.98]"
+                            className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-primary hover:bg-blue-600 text-white shadow-lg shadow-primary/25 active:scale-[0.98]"
                           >
                             <UserPlus size={18} /> Request to Join
                           </button>
                         )}
-
-                        {/* Follow / Unfollow */}
                         <button
                           onClick={handleFollowToggle}
                           disabled={actionLoading}
-                          className="w-full py-2.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-transparent border border-border-light dark:border-gray-600 text-muted-light dark:text-muted-dark hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98]"
+                          className="w-full py-2.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-transparent border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98]"
                         >
                           {isFollower ? (
                             <>
@@ -656,25 +730,25 @@ const ClubDetails = () => {
                     )}
                   </div>
 
-                  {/* Stats Split: Members & Followers (NOW CLICKABLE) */}
-                  <div className="flex flex-col gap-1 mb-6 border-b border-border-light dark:border-gray-700 pb-4">
+                  {/* Stats Split: Members & Followers */}
+                  <div className="flex flex-col gap-1 mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
                     <div
                       onClick={() => setListModalType("members")}
                       className="flex items-center justify-between p-2.5 -mx-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
                     >
-                      <span className="text-sm font-medium text-muted-light dark:text-muted-dark flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
                         <Users size={16} /> Active Members
                       </span>
                       <span className="text-sm font-bold bg-primary/10 text-primary px-2.5 py-0.5 rounded-md">
-                        {club.members?.length || 0}
+                        {(club.members?.length || 0) +
+                          (club.admins?.length || 0)}
                       </span>
                     </div>
-
                     <div
                       onClick={() => setListModalType("followers")}
                       className="flex items-center justify-between p-2.5 -mx-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
                     >
-                      <span className="text-sm font-medium text-muted-light dark:text-muted-dark flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
                         <Bell size={16} /> Followers
                       </span>
                       <span className="text-sm font-bold bg-gray-200 dark:bg-gray-700 px-2.5 py-0.5 rounded-md">
@@ -683,43 +757,49 @@ const ClubDetails = () => {
                     </div>
                   </div>
 
-                  {/* Admin Profile */}
+                  {/* ADMINS PROFILE STACK */}
                   <div className="mb-2">
-                    <h4 className="text-xs font-bold text-muted-light dark:text-muted-dark uppercase tracking-wider mb-3">
-                      Club Admin
+                    <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                      Club Admins
                     </h4>
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center text-white font-bold text-lg overflow-hidden">
-                          {club.admin?.image ? (
-                            <img
-                              src={club.admin.image}
-                              className="w-full h-full object-cover"
-                              alt="Admin"
-                            />
-                          ) : (
-                            club.admin?.name?.charAt(0) || "A"
-                          )}
+                    <div className="flex flex-col gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                      {club.admins?.map((adminObj) => (
+                        <div
+                          key={adminObj._id}
+                          className="flex items-center gap-3"
+                        >
+                          <div className="relative shrink-0">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center text-white font-bold text-sm overflow-hidden">
+                              {adminObj.image ? (
+                                <img
+                                  src={adminObj.image}
+                                  className="w-full h-full object-cover"
+                                  alt="Admin"
+                                />
+                              ) : (
+                                adminObj.name?.charAt(0) || "A"
+                              )}
+                            </div>
+                            <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-white dark:ring-gray-800"></div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold truncate">
+                              {adminObj.name || "Admin"}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {adminObj.email}
+                            </p>
+                          </div>
                         </div>
-                        <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 ring-2 ring-white dark:ring-gray-800"></div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold truncate">
-                          {club.admin?.name || "Admin"}
-                        </p>
-                        <p className="text-xs text-muted-light dark:text-muted-dark truncate">
-                          {club.admin?.email}
-                        </p>
-                      </div>
+                      ))}
                     </div>
                   </div>
 
-                  <button className="w-full mt-4 py-2 px-4 bg-transparent border border-border-light dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2">
-                    <Mail size={16} /> Contact Admin
+                  <button className="w-full mt-4 py-2 px-4 bg-transparent border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2">
+                    <Mail size={16} /> Contact Admins
                   </button>
                 </div>
 
-                {/* admin panel: manage pending requests */}
                 {isAdmin && club.joinRequests?.length > 0 && (
                   <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-2xl p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-4 text-amber-700 dark:text-amber-500">
@@ -776,14 +856,13 @@ const ClubDetails = () => {
                   </div>
                 )}
 
-                {/* Info Stats Card */}
                 <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-5 border border-white/50 dark:border-gray-700">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-2 rounded-xl bg-purple-50 dark:bg-primary/10">
                       <div className="text-2xl font-bold text-primary">
                         {events.length || 0}
                       </div>
-                      <div className="text-xs text-muted-light dark:text-muted-dark font-medium">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                         Total Events
                       </div>
                     </div>
@@ -792,7 +871,7 @@ const ClubDetails = () => {
                         {new Date(club.createdAt).getFullYear() ||
                           new Date().getFullYear()}
                       </div>
-                      <div className="text-xs text-muted-light dark:text-muted-dark font-medium">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                         Established
                       </div>
                     </div>
@@ -804,15 +883,15 @@ const ClubDetails = () => {
         </div>
       </main>
 
-      {/* --- NEW: MEMBERS / FOLLOWERS MODAL --- */}
+      {/*  */}
       {listModalType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setListModalType(null)}
           ></div>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md relative z-10 shadow-2xl flex flex-col max-h-[80vh] border border-border-light dark:border-gray-700 transform transition-all">
-            <div className="p-5 border-b border-border-light dark:border-gray-700 flex justify-between items-center shrink-0 bg-gray-50/50 dark:bg-gray-900/50 rounded-t-2xl">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md relative z-10 shadow-2xl flex flex-col max-h-[80vh] border border-gray-200 dark:border-gray-700 transform transition-all">
+            <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0 bg-gray-50/50 dark:bg-gray-900/50 rounded-t-2xl">
               <h3 className="font-bold text-lg capitalize flex items-center gap-2">
                 {listModalType === "members" ? (
                   <Users size={20} className="text-primary" />
@@ -823,7 +902,7 @@ const ClubDetails = () => {
               </h3>
               <button
                 onClick={() => setListModalType(null)}
-                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors text-muted-light"
+                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-500"
               >
                 <X size={20} />
               </button>
@@ -850,35 +929,60 @@ const ClubDetails = () => {
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold leading-tight">
-                          {u.name}{" "}
-                          {u._id === club.admin?._id && (
-                            <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">
-                              Admin
+                          {u.name}
+                          {u.clubRole === "admin" && (
+                            <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-2 font-bold tracking-wide">
+                              ADMIN
                             </span>
                           )}
                         </span>
-                        <span className="text-xs text-muted-light dark:text-muted-dark">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {u.email}
                         </span>
                       </div>
                     </div>
 
-                    {/* Only Admins can remove other members (cannot remove themselves) */}
+                    {/* ADMIN CONTROLS */}
                     {isAdmin &&
                       listModalType === "members" &&
                       u._id !== user._id && (
-                        <button
-                          onClick={() => handleRemoveMemberClick(u._id, u.name)}
-                          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800"
-                          title="Remove Member"
-                        >
-                          <UserMinus size={16} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          {u.clubRole === "member" ? (
+                            <button
+                              onClick={() =>
+                                handlePromoteAdminClick(u._id, u.name)
+                              }
+                              className="p-2 text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors border border-transparent hover:border-yellow-200 dark:hover:border-yellow-800"
+                              title="Promote to Admin"
+                            >
+                              <Crown size={16} />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                handleDemoteAdminClick(u._id, u.name)
+                              }
+                              className="p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors border border-transparent hover:border-orange-200 dark:hover:border-orange-800"
+                              title="Demote to Member"
+                            >
+                              <ShieldOff size={16} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() =>
+                              handleRemoveMemberClick(u._id, u.name)
+                            }
+                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800"
+                            title="Remove Member"
+                          >
+                            <UserMinus size={16} />
+                          </button>
+                        </div>
                       )}
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-muted-light">
+                <div className="p-8 text-center text-gray-500">
                   No {listModalType} yet.
                 </div>
               )}
@@ -887,7 +991,6 @@ const ClubDetails = () => {
         </div>
       )}
 
-      {/* Reusable Confirmation Modal */}
       <ConfirmDialog
         isOpen={modalConfig.isOpen}
         onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
@@ -900,18 +1003,10 @@ const ClubDetails = () => {
       />
 
       <div
-        className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 ease-out transform ${
-          toast.show
-            ? "translate-y-0 opacity-100"
-            : "translate-y-8 opacity-0 pointer-events-none"
-        }`}
+        className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 ease-out transform ${toast.show ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0 pointer-events-none"}`}
       >
         <div
-          className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-md ${
-            toast.type === "error"
-              ? "bg-red-50/90 dark:bg-red-900/80 border-red-200 dark:border-red-800 text-red-700 dark:text-red-200"
-              : "bg-green-50/90 dark:bg-green-900/80 border-green-200 dark:border-green-800 text-green-700 dark:text-green-200"
-          }`}
+          className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-md ${toast.type === "error" ? "bg-red-50/90 dark:bg-red-900/80 border-red-200 dark:border-red-800 text-red-700 dark:text-red-200" : "bg-green-50/90 dark:bg-green-900/80 border-green-200 dark:border-green-800 text-green-700 dark:text-green-200"}`}
         >
           {toast.type === "error" ? (
             <AlertCircle size={20} className="shrink-0" />

@@ -25,7 +25,7 @@ const createClub = async (req, res) => {
           use_filename: true,
         });
         imageUrl = result.secure_url;
-        fs.unlinkSync(req.file.path); // Delete the file from local uploads folder
+        fs.unlinkSync(req.file.path);
       } catch (error) {
         res.status(500);
         throw new Error("Image upload failed");
@@ -44,8 +44,8 @@ const createClub = async (req, res) => {
       description,
       category,
       image: imageUrl,
-      admin: adminId,
-      members: [adminId],
+      admins: [adminId],
+      members: [],
       isApproved: false,
     });
 
@@ -82,15 +82,15 @@ const getAllClubs = async (req, res) => {
     }
 
     const clubs = await Club.find(query)
-      .populate("admin", "username email")
-      .populate("members", "username email")
-      .populate("followers", "username email")
+      .populate("admins", "name email image")
+      .populate("members", "name email image")
+      .populate("followers", "name email image")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
       data: clubs,
-      count: clubs.Length,
+      count: clubs.length,
     });
   } catch (error) {
     console.error("Error fetching clubs:", error);
@@ -106,14 +106,25 @@ const leaveClub = async (req, res) => {
     throw new Error("Club not found");
   }
 
-  if (!club.members.includes(req.user.id)) {
+  const isMember = club.members.some((id) => id.toString() === req.user.id);
+  const isAdmin = club.admins.some((id) => id.toString() === req.user.id);
+
+  if (!isMember && !isAdmin) {
     res.status(400);
-    throw new Error("You are not a member of this club");
+    throw new Error("You are not a part of this club");
   }
 
-  club.members = club.members.filter(
-    (memberId) => memberId.toString() !== req.user.id,
-  );
+  if (isAdmin) {
+    if (club.admins.length <= 1) {
+      res.status(400);
+      throw new Error(
+        "You are the last admin. You must promote someone else to admin before leaving.",
+      );
+    }
+    club.admins = club.admins.filter((id) => id.toString() !== req.user.id);
+  } else {
+    club.members = club.members.filter((id) => id.toString() !== req.user.id);
+  }
 
   await club.save();
 
@@ -122,19 +133,22 @@ const leaveClub = async (req, res) => {
 
 const deleteClub = async (req, res) => {
   try {
-    const clubId = await Club.findById(req.params.id);
-    if (!clubId) {
+    const club = await Club.findById(req.params.id);
+    if (!club) {
       return res.status(404).json({ message: "Club not found." });
     }
 
-    //check ownership of the club
-    if (clubId.admin.toString() !== req.user.id) {
+    const isRequesterAdmin =
+      club.admins.some((id) => id.toString() === req.user.id) ||
+      req.user.roles?.includes("superadmin");
+
+    if (!isRequesterAdmin) {
       return res
         .status(403)
         .json({ message: "You are not authorized to delete this club." });
     }
 
-    await clubId.deleteOne();
+    await club.deleteOne();
     res.status(200).json({ message: "Club deleted successfully." });
   } catch (error) {
     console.error("Error deleting club:", error);
@@ -145,7 +159,7 @@ const deleteClub = async (req, res) => {
 const getClubById = async (req, res) => {
   try {
     const club = await Club.findById(req.params.id)
-      .populate("admin", "name email image")
+      .populate("admins", "name email image")
       .populate("members", "name email image")
       .populate("joinRequests", "name email image")
       .populate("followers", "name email image");
@@ -164,8 +178,8 @@ const getClubById = async (req, res) => {
 //superadmin functions
 const getPendingClubs = asyncHandler(async (req, res) => {
   const clubs = await Club.find({ isApproved: false }).populate(
-    "admin",
-    "name email",
+    "admins",
+    "name email image",
   );
   res.status(200).json({ success: true, data: clubs });
 });
@@ -180,13 +194,15 @@ const approveClub = asyncHandler(async (req, res) => {
   club.isApproved = true;
   await club.save();
 
-  // Notify the Club Owner
-  await createNotification(
-    club.admin,
-    `Great news! Your club "${club.name}" has been approved.`,
-    "info",
-    `/clubs/${club._id}`,
-  );
+  // FIX: Notify all Admins of the club
+  for (const adminId of club.admins) {
+    await createNotification(
+      adminId,
+      `Great news! Your club "${club.name}" has been approved.`,
+      "info",
+      `/clubs/${club._id}`,
+    );
+  }
 
   res.status(200).json({ success: true, data: club });
 });
@@ -198,11 +214,13 @@ const rejectClub = asyncHandler(async (req, res) => {
     throw new Error("Club not found");
   }
 
-  await createNotification(
-    club.admin,
-    `We regret to inform you that your club "${club.name}" has been rejected.`,
-    "alert",
-  );
+  for (const adminId of club.admins) {
+    await createNotification(
+      adminId,
+      `We regret to inform you that your club "${club.name}" has been rejected.`,
+      "alert",
+    );
+  }
 
   await club.deleteOne();
   res.status(200).json({ success: true, message: "Club rejected" });
@@ -237,7 +255,6 @@ const followClub = asyncHandler(async (req, res) => {
     throw new Error("Club not found");
   }
 
-  // Add to followers if not already there
   if (!club.followers.includes(req.user.id)) {
     club.followers.push(req.user.id);
     await club.save();
@@ -268,24 +285,22 @@ const joinRequestClub = asyncHandler(async (req, res) => {
     throw new Error("Club not found");
   }
 
-  // Check if already a member or pending
-  if (club.members.includes(req.user.id)) {
-    return res.status(400).json({ message: "You are already a member" });
+  if (club.members.includes(req.user.id) || club.admins.includes(req.user.id)) {
+    return res
+      .status(400)
+      .json({ message: "You are already a part of this club" });
   }
   if (club.joinRequests.includes(req.user.id)) {
     return res.status(400).json({ message: "Request already sent" });
   }
 
-  // Add to join requests
   club.joinRequests.push(req.user.id);
 
-  // automatically follow the club when requesting to join
   if (!club.followers.includes(req.user.id)) {
     club.followers.push(req.user.id);
   }
 
   await club.save();
-
   res.status(200).json({ success: true, message: "Request sent successfully" });
 });
 
@@ -298,8 +313,10 @@ const acceptRequest = asyncHandler(async (req, res) => {
     throw new Error("Club not found");
   }
 
-  // Check Permissions
-  if (club.admin.toString() !== req.user.id && req.user.role !== "superadmin") {
+  const isRequesterAdmin =
+    club.admins.some((id) => id.toString() === req.user.id) ||
+    req.user.roles?.includes("superadmin");
+  if (!isRequesterAdmin) {
     res.status(401);
     throw new Error("Not authorized to manage this club");
   }
@@ -308,14 +325,12 @@ const acceptRequest = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "No request found for this user" });
   }
 
-  // Move from Requests to Members
   club.joinRequests = club.joinRequests.filter(
     (id) => id.toString() !== userIdToApprove,
   );
   club.members.push(userIdToApprove);
 
   await club.save();
-
   res.status(200).json({ success: true, message: "User accepted into club" });
 });
 
@@ -327,12 +342,15 @@ const rejectRequest = asyncHandler(async (req, res) => {
     throw new Error("Club not found");
   }
 
-  if (club.admin.toString() !== req.user.id && req.user.role !== "superadmin") {
+  // FIX: Permissions check
+  const isRequesterAdmin =
+    club.admins.some((id) => id.toString() === req.user.id) ||
+    req.user.roles?.includes("superadmin");
+  if (!isRequesterAdmin) {
     res.status(401);
     throw new Error("Not authorized");
   }
 
-  // Remove from requests
   club.joinRequests = club.joinRequests.filter(
     (id) => id.toString() !== userIdToReject,
   );
@@ -349,10 +367,10 @@ const updateClub = async (req, res) => {
       return res.status(404).json({ message: "Club not found" });
     }
 
-    if (
-      club.admin.toString() !== req.user._id.toString() &&
-      !req.user.roles?.includes("superadmin")
-    ) {
+    const isRequesterAdmin =
+      club.admins.some((id) => id.toString() === req.user.id) ||
+      req.user.roles?.includes("superadmin");
+    if (!isRequesterAdmin) {
       return res
         .status(403)
         .json({ message: "Not authorized to edit this club" });
@@ -395,16 +413,19 @@ const removeMember = async (req, res) => {
     const club = await Club.findById(req.params.id);
     if (!club) return res.status(404).json({ message: "Club not found" });
 
-    if (club.admin.toString() !== req.user._id.toString()) {
+    const isRequesterAdmin =
+      club.admins.some((id) => id.toString() === req.user.id) ||
+      req.user.roles?.includes("superadmin");
+    if (!isRequesterAdmin) {
       return res
         .status(403)
-        .json({ message: "Only the admin can remove members" });
+        .json({ message: "Only an admin can remove members" });
     }
 
-    if (req.params.userId === club.admin.toString()) {
-      return res
-        .status(400)
-        .json({ message: "Admin cannot remove themselves" });
+    if (club.admins.some((id) => id.toString() === req.params.userId)) {
+      return res.status(400).json({
+        message: "Cannot remove an admin. Demote them to a member first.",
+      });
     }
 
     club.members = club.members.filter(
@@ -418,6 +439,70 @@ const removeMember = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error removing member" });
+  }
+};
+
+const promoteToAdmin = async (req, res) => {
+  try {
+    const club = await Club.findById(req.params.id);
+    if (!club) return res.status(404).json({ message: "Club not found" });
+
+    const isRequesterAdmin =
+      club.admins.some((id) => id.toString() === req.user.id) ||
+      req.user.roles?.includes("superadmin");
+    if (!isRequesterAdmin)
+      return res.status(403).json({ message: "Not authorized" });
+
+    const targetUserId = req.params.userId;
+
+    if (!club.members.includes(targetUserId)) {
+      return res.status(400).json({ message: "User must be a member first." });
+    }
+
+    if (club.admins.includes(targetUserId)) {
+      return res.status(400).json({ message: "User is already an admin." });
+    }
+
+    club.members = club.members.filter((id) => id.toString() !== targetUserId);
+    club.admins.push(targetUserId);
+
+    await club.save();
+    res.status(200).json({ success: true, message: "Promoted to Admin!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const demoteFromAdmin = async (req, res) => {
+  try {
+    const club = await Club.findById(req.params.id);
+    if (!club) return res.status(404).json({ message: "Club not found" });
+
+    const isRequesterAdmin =
+      club.admins.some((id) => id.toString() === req.user.id) ||
+      req.user.roles?.includes("superadmin");
+    if (!isRequesterAdmin)
+      return res.status(403).json({ message: "Not authorized" });
+
+    const targetUserId = req.params.userId;
+
+    if (club.admins.length <= 1) {
+      return res
+        .status(400)
+        .json({ message: "A club must have at least one admin." });
+    }
+
+    club.admins = club.admins.filter((id) => id.toString() !== targetUserId);
+    if (!club.members.includes(targetUserId)) {
+      club.members.push(targetUserId);
+    }
+
+    await club.save();
+    res.status(200).json({ success: true, message: "Demoted to Member." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -438,4 +523,6 @@ module.exports = {
   acceptRequest,
   rejectRequest,
   updateClub,
+  promoteToAdmin,
+  demoteFromAdmin,
 };
