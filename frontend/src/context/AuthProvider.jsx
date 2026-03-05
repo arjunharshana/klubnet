@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
       await axios.post(
         `${apiUri}/api/users/logout`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
     } catch (err) {
       console.error("Logout failed:", err);
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

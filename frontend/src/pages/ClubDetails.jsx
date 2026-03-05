@@ -23,6 +23,7 @@ import {
   UserPlus,
   Check,
   X,
+  AlertCircle,
 } from "lucide-react";
 import CreateEvent from "../components/CreateEvent";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -40,7 +41,6 @@ const ClubDetails = () => {
   const [events, setEvents] = useState([]);
   const [editingEvent, setEditingEvent] = useState(null);
 
-  // Dynamic Modal State
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
     title: "",
@@ -49,6 +49,20 @@ const ClubDetails = () => {
     isDanger: false,
     action: null,
   });
+
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 3000);
+  };
 
   // check if user is in array of members/followers/requests
   const isUserInArray = (array) => {
@@ -98,9 +112,16 @@ const ClubDetails = () => {
         {},
         { withCredentials: true },
       );
-      await fetchClubData(); // Refresh data
+      await fetchClubData();
+      showToast(
+        isFollower ? "Unfollowed club" : "You are now following this club!",
+        "success",
+      );
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to update follow status");
+      showToast(
+        err.response?.data?.message || "Failed to update follow status",
+        "error",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -118,14 +139,17 @@ const ClubDetails = () => {
         { withCredentials: true },
       );
       await fetchClubData();
+      showToast("Join request sent to admin", "success");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to send join request");
+      showToast(
+        err.response?.data?.message || "Failed to send join request",
+        "error",
+      );
     } finally {
       setActionLoading(false);
     }
   };
 
-  // REPLACED: Opens the Confirmation Modal instead of browser popup
   const handleLeaveClubClick = () => {
     setModalConfig({
       isOpen: true,
@@ -146,8 +170,12 @@ const ClubDetails = () => {
           );
           await fetchClubData();
           setModalConfig((prev) => ({ ...prev, isOpen: false }));
+          showToast("You have left the club.", "success");
         } catch (err) {
-          alert(err.response?.data?.message || "Failed to leave club");
+          showToast(
+            err.response?.data?.message || "Failed to leave club",
+            "error",
+          );
         } finally {
           setActionLoading(false);
         }
@@ -165,9 +193,16 @@ const ClubDetails = () => {
         {},
         { withCredentials: true },
       );
-      await fetchClubData(); // Refresh list
+      await fetchClubData();
+      showToast(
+        `Request ${action === "accept" ? "accepted" : "rejected"}`,
+        "success",
+      );
     } catch (err) {
-      alert(err.response?.data?.message || `Failed to ${action} request`);
+      showToast(
+        err.response?.data?.message || `Failed to ${action} request`,
+        "error",
+      );
     }
   };
 
@@ -194,12 +229,13 @@ const ClubDetails = () => {
         { withCredentials: true },
       );
       refreshEvents();
-    } catch (error) {
-      console.error("Failed to RSVP to event", error);
+      // Notice we don't know if they joined or left from the response directly, so we just show a generic success
+      showToast("Event registration updated!", "success");
+    } catch {
+      showToast("Failed to RSVP to event", "error");
     }
   };
 
-  // REPLACED: Opens the Confirmation Modal instead of browser popup
   const handleDeleteEventClick = (eventId) => {
     setModalConfig({
       isOpen: true,
@@ -218,9 +254,9 @@ const ClubDetails = () => {
           });
           refreshEvents();
           setModalConfig((prev) => ({ ...prev, isOpen: false }));
-        } catch (err) {
-          console.error(err);
-          alert("Failed to delete event");
+          showToast("Event deleted successfully", "success");
+        } catch {
+          showToast("Failed to delete event", "error");
         } finally {
           setActionLoading(false);
         }
@@ -244,19 +280,20 @@ const ClubDetails = () => {
 
   if (loading)
     return (
-      <div className="flex h-screen items-center justify-center">
-        Loading...
+      <div className="flex h-screen items-center justify-center bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
+
   if (error || !club)
     return (
-      <div className="flex h-screen items-center justify-center text-red-500">
+      <div className="flex h-screen items-center justify-center text-red-500 bg-background-light dark:bg-background-dark">
         {error || "Club not found"}
       </div>
     );
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark transition-colors duration-300">
+    <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark transition-colors duration-300 overflow-x-hidden">
       <DashboardNavbar />
 
       <main className="flex-grow pb-12 relative">
@@ -293,7 +330,7 @@ const ClubDetails = () => {
             <div
               className="absolute inset-0 bg-gray-200 dark:bg-gray-800 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
               style={{
-                backgroundImage: `url(${club.image || "https://via.placeholder.com/1200x600"})`,
+                backgroundImage: `url(${club.image || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1200"})`,
               }}
             ></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
@@ -429,7 +466,7 @@ const ClubDetails = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteEventClick(event._id); // USING NEW MODAL HANDLER
+                                  handleDeleteEventClick(event._id);
                                 }}
                                 className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                               >
@@ -487,7 +524,6 @@ const ClubDetails = () => {
               <div className="sticky top-24 space-y-6">
                 {/* Action Card */}
                 <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl shadow-primary/5 border border-white/50 dark:border-gray-700">
-                  {/* dual */}
                   <div className="flex flex-col gap-3 mb-6">
                     {isAdmin ? (
                       <button className="w-full py-3.5 px-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 cursor-default">
@@ -498,7 +534,7 @@ const ClubDetails = () => {
                         {/* Request to Join / Leave / Pending */}
                         {isMember ? (
                           <button
-                            onClick={handleLeaveClubClick} // USING NEW MODAL HANDLER
+                            onClick={handleLeaveClubClick}
                             disabled={actionLoading}
                             className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-900 hover:bg-red-100 active:scale-[0.98]"
                           >
@@ -645,7 +681,6 @@ const ClubDetails = () => {
                     </div>
                   </div>
                 )}
-                {/* --- END ADMIN PANEL --- */}
 
                 {/* Info Stats Card */}
                 <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-5 border border-white/50 dark:border-gray-700">
@@ -684,7 +719,35 @@ const ClubDetails = () => {
         isLoading={actionLoading}
       />
 
-      {/* Create/Edit Event Modal */}
+      <div
+        className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 ease-out transform ${
+          toast.show
+            ? "translate-y-0 opacity-100"
+            : "translate-y-8 opacity-0 pointer-events-none"
+        }`}
+      >
+        <div
+          className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-md ${
+            toast.type === "error"
+              ? "bg-red-50/90 dark:bg-red-900/80 border-red-200 dark:border-red-800 text-red-700 dark:text-red-200"
+              : "bg-green-50/90 dark:bg-green-900/80 border-green-200 dark:border-green-800 text-green-700 dark:text-green-200"
+          }`}
+        >
+          {toast.type === "error" ? (
+            <AlertCircle size={20} className="shrink-0" />
+          ) : (
+            <CheckCircle size={20} className="shrink-0" />
+          )}
+          <p className="text-sm font-bold">{toast.message}</p>
+          <button
+            onClick={() => setToast((prev) => ({ ...prev, show: false }))}
+            className="ml-2 opacity-50 hover:opacity-100 transition-opacity"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
       {showEvents && (
         <CreateEvent
           clubId={club._id}
@@ -693,10 +756,11 @@ const ClubDetails = () => {
           onEventCreated={() => {
             refreshEvents();
             setShowEvents(false);
-            alert(
+            showToast(
               editingEvent
                 ? "Event Updated Successfully!"
                 : "Event Created Successfully!",
+              "success",
             );
           }}
         />

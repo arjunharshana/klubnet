@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import DashboardNavbar from "../components/DashboardNavbar"; // <--- Using the standard Navbar
+import DashboardNavbar from "../components/DashboardNavbar";
+import ConfirmDialog from "../components/ConfirmDialog";
 import {
   Component,
   Clock,
@@ -18,6 +19,8 @@ import {
 const SuperAdminDashboard = () => {
   const [pendingClubs, setPendingClubs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
   // data of users and clubs for stats
   const [stats, setStats] = useState({
     totalClubs: 0,
@@ -25,11 +28,35 @@ const SuperAdminDashboard = () => {
     pendingClubs: 0,
   });
 
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "",
+    isDanger: false,
+    action: null,
+  });
+
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 3000);
+  };
+
   //fetch system stats
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URI;
+        const API_URL =
+          import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+
         // fetch pending clubs
         const pendingRes = await axios.get(
           `${API_URL}/api/clubs/admin/pending`,
@@ -42,6 +69,7 @@ const SuperAdminDashboard = () => {
         const statsRes = await axios.get(`${API_URL}/api/clubs/admin/stats`, {
           withCredentials: true,
         });
+
         setStats(
           statsRes.data?.data || {
             totalClubs: 0,
@@ -63,8 +91,10 @@ const SuperAdminDashboard = () => {
 
   // handler functions
   const handleApprove = async (id) => {
+    setActionLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URI;
+      const API_URL =
+        import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
       await axios.put(
         `${API_URL}/api/clubs/${id}/approve`,
         {},
@@ -74,35 +104,56 @@ const SuperAdminDashboard = () => {
       );
       // Remove from UI
       setPendingClubs((prev) => prev.filter((c) => c._id !== id));
-      alert("Club Approved!");
+      showToast("Club Approved Successfully!", "success");
     } catch {
-      alert("Approval failed");
+      showToast("Approval failed. Please try again.", "error");
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleReject = async (id) => {
-    if (!window.confirm("Are you sure you want to reject this club?")) return;
-    try {
-      const API_URL = import.meta.env.VITE_API_URI;
-      await axios.delete(`${API_URL}/api/clubs/${id}/reject`, {
-        withCredentials: true,
-      });
-      // Remove from UI
-      setPendingClubs((prev) => prev.filter((c) => c._id !== id));
-    } catch {
-      alert("Rejection failed");
-    }
+  // Opens the Confirmation Modal instead of browser popup
+  const handleRejectClick = (id) => {
+    setModalConfig({
+      isOpen: true,
+      title: "Reject Club",
+      message:
+        "Are you sure you want to reject this club application? This cannot be undone.",
+      confirmText: "Yes, Reject",
+      isDanger: true,
+      action: async () => {
+        setActionLoading(true);
+        try {
+          const API_URL =
+            import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+          await axios.delete(`${API_URL}/api/clubs/${id}/reject`, {
+            withCredentials: true,
+          });
+          // Remove from UI
+          setPendingClubs((prev) => prev.filter((c) => c._id !== id));
+          setModalConfig((prev) => ({ ...prev, isOpen: false }));
+          showToast("Club rejected and removed.", "success");
+        } catch {
+          showToast("Rejection failed. Please try again.", "error");
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
   if (loading)
     return (
-      <div className="h-screen flex items-center justify-center bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
-        Loading Admin Console...
+      <div className="h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+        <p className="font-medium text-muted-light dark:text-muted-dark">
+          Loading Admin Console...
+        </p>
       </div>
     );
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 transition-colors duration-300">
+    <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 transition-colors duration-300 overflow-x-hidden">
       {/* Navbar */}
       <DashboardNavbar />
 
@@ -113,7 +164,7 @@ const SuperAdminDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
         {/* Header Section */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -271,15 +322,17 @@ const SuperAdminDashboard = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-3">
                           <button
-                            onClick={() => handleReject(club._id)}
-                            className="p-2 rounded-lg border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-500 dark:text-slate-400 hover:border-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 transition-all shadow-sm"
+                            onClick={() => handleRejectClick(club._id)}
+                            disabled={actionLoading}
+                            className="p-2 rounded-lg border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-500 dark:text-slate-400 hover:border-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 transition-all shadow-sm disabled:opacity-50"
                             title="Reject"
                           >
                             <X size={18} />
                           </button>
                           <button
                             onClick={() => handleApprove(club._id)}
-                            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all"
+                            disabled={actionLoading}
+                            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all disabled:opacity-70 disabled:hover:scale-100"
                           >
                             <Check size={16} /> Approve
                           </button>
@@ -293,12 +346,51 @@ const SuperAdminDashboard = () => {
           </div>
         </section>
       </main>
+
+      <ConfirmDialog
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={modalConfig.action}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        isDanger={modalConfig.isDanger}
+        isLoading={actionLoading}
+      />
+
+      <div
+        className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 ease-out transform ${
+          toast.show
+            ? "translate-y-0 opacity-100"
+            : "translate-y-8 opacity-0 pointer-events-none"
+        }`}
+      >
+        <div
+          className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-md ${
+            toast.type === "error"
+              ? "bg-red-50/90 dark:bg-red-900/80 border-red-200 dark:border-red-800 text-red-700 dark:text-red-200"
+              : "bg-green-50/90 dark:bg-green-900/80 border-green-200 dark:border-green-800 text-green-700 dark:text-green-200"
+          }`}
+        >
+          {toast.type === "error" ? (
+            <AlertCircle size={20} className="shrink-0" />
+          ) : (
+            <CheckCircle size={20} className="shrink-0" />
+          )}
+          <p className="text-sm font-bold">{toast.message}</p>
+          <button
+            onClick={() => setToast((prev) => ({ ...prev, show: false }))}
+            className="ml-2 opacity-50 hover:opacity-100 transition-opacity"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
 //stat card component
-
 const StatCard = ({ icon, color, label, value, badge, highlight }) => (
   <div
     className={`glass-card rounded-2xl p-6 bg-white/60 dark:bg-gray-800/60 border border-white/50 dark:border-gray-700 shadow-sm hover:shadow-md transition-all ${highlight ? "border-l-4 border-l-primary" : ""}`}

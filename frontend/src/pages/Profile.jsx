@@ -82,7 +82,6 @@ const Profile = () => {
     return club.admin?._id === user?._id ? "Admin" : "Member";
   };
 
-  // sorting function
   const getSortedClubs = (clubList) => {
     let filtered = clubList.filter((c) =>
       c.name.toLowerCase().includes(search.toLowerCase()),
