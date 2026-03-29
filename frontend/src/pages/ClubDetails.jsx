@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../hooks/useAuth";
+import Loader from "../components/Loader";
 import DashboardNavbar from "../components/DashboardNavbar";
 import {
   Users,
@@ -417,12 +418,7 @@ const ClubDetails = () => {
     return event.attendees?.some((att) => (att._id || att) === user?._id);
   };
 
-  if (loading)
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (loading) return <Loader />;
 
   if (error || !club)
     return (

@@ -1,11 +1,12 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import Loader from "./Loader";
 
 const SuperAdminRoute = () => {
   const { user, loading } = useAuth();
 
-  if (loading) return <div className="p-10 text-center">Loading...</div>;
+  if (loading) return <Loader />;
 
   if (user && user?.roles?.includes("superadmin")) {
     return <Outlet />;

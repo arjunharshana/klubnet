@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import DashboardNavbar from "../components/DashboardNavbar";
 import ConfirmDialog from "../components/ConfirmDialog";
+import Loader from "../components/Loader";
 import {
   Component,
   Clock,
@@ -142,16 +143,7 @@ const SuperAdminDashboard = () => {
     });
   };
 
-  if (loading)
-    return (
-      <div className="h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-        <p className="font-medium text-muted-light dark:text-muted-dark">
-          Loading Admin Console...
-        </p>
-      </div>
-    );
-
+  if (loading) return <Loader />;
   return (
     <div className="flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 transition-colors duration-300 overflow-x-hidden">
       {/* Navbar */}

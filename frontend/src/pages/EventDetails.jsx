@@ -5,6 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import DashboardNavbar from "../components/DashboardNavbar";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Loader from "../components/Loader";
 import {
   ArrowLeft,
   Calendar,
@@ -289,13 +290,7 @@ const EventDetails = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  if (loading) return <Loader />;
 
   if (!event || !eventId || eventId === "undefined") {
     return (
