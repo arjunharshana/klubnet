@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../hooks/useAuth";
 import DashboardNavbar from "../components/DashboardNavbar";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   ArrowLeft,
   Calendar,
@@ -20,7 +22,9 @@ import {
   Download,
   FileText,
   CheckCircle,
+  Search,
 } from "lucide-react";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const EventDetails = () => {
   const params = useParams();
@@ -35,8 +39,33 @@ const EventDetails = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [announcementText, setAnnouncementText] = useState("");
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch Event Data from Backend
+  // --- NEW: Track Check-ins locally ---
+  const [checkedInIds, setCheckedInIds] = useState([]);
+
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "Confirm",
+    cancelText: "Cancel",
+    isDanger: false,
+    action: null,
+  });
+
+  const showDialogAlert = (title, message, isError = false) => {
+    setModalConfig({
+      isOpen: true,
+      title: title,
+      message: message,
+      confirmText: "Okay",
+      cancelText: "Close",
+      isDanger: isError,
+      action: () => setModalConfig((prev) => ({ ...prev, isOpen: false })),
+    });
+  };
+
   const fetchEventData = useCallback(async () => {
     if (!eventId || eventId === "undefined") {
       setLoading(false);
@@ -53,7 +82,6 @@ const EventDetails = () => {
       const eventData = res.data.data;
       setEvent(eventData);
 
-      // Verify Admin Status securely
       if (user && eventData.club) {
         const clubAdmins = eventData.club.admins || [];
         const isUserAdmin =
@@ -75,7 +103,6 @@ const EventDetails = () => {
     fetchEventData();
   }, [fetchEventData]);
 
-  // Live Countdown Timer logic
   useEffect(() => {
     if (!event?.date) return;
     const interval = setInterval(() => {
@@ -103,9 +130,12 @@ const EventDetails = () => {
   const handleRSVP = async () => {
     if (!user) return navigate("/login");
     if (!eventId || eventId === "undefined") {
-      console.error("Invalid Event ID");
-      return;
+      return showDialogAlert("Error", "Invalid Event ID", true);
     }
+
+    const hasJoined = event.attendees?.some(
+      (att) => (att._id || att).toString() === user._id.toString(),
+    );
 
     setActionLoading(true);
     try {
@@ -116,12 +146,116 @@ const EventDetails = () => {
         {},
         { withCredentials: true },
       );
-      fetchEventData(); // Refresh the event to update the attendee list live
+      fetchEventData();
+
+      showDialogAlert(
+        hasJoined ? "RSVP Cancelled" : "Registration Complete",
+        hasJoined
+          ? "You are no longer registered for this event."
+          : "You have successfully registered for this event!",
+        false,
+      );
     } catch (error) {
       console.error("Error updating RSVP:", error);
+      showDialogAlert(
+        "Action Failed",
+        error.response?.data?.message ||
+          "An error occurred while updating your RSVP.",
+        true,
+      );
     } finally {
       setActionLoading(false);
     }
+  };
+
+  // --- Toggle Check-in Function ---
+  const toggleCheckIn = (attendeeId) => {
+    setCheckedInIds((prev) =>
+      prev.includes(attendeeId)
+        ? prev.filter((id) => id !== attendeeId)
+        : [...prev, attendeeId],
+    );
+  };
+
+  const exportToCSV = () => {
+    if (!event?.attendees?.length) {
+      return showDialogAlert(
+        "Export Failed",
+        "There are no attendees registered for this event yet.",
+        true,
+      );
+    }
+
+    let csvContent = "Name,Email\n";
+
+    event.attendees.forEach((att) => {
+      const name = `"${att.name || "N/A"}"`;
+      const email = `"${att.email || "N/A"}"`;
+      csvContent += `${name},${email}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `${event.title.replace(/\s+/g, "_")}_Attendees.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showDialogAlert(
+      "Export Successful",
+      "The CSV file has been downloaded to your device.",
+      false,
+    );
+  };
+
+  const exportToPDF = () => {
+    if (!event?.attendees?.length) {
+      return showDialogAlert(
+        "Export Failed",
+        "There are no attendees registered for this event yet.",
+        true,
+      );
+    }
+
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("Event Attendee List", 14, 22);
+
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Event: ${event.title}`, 14, 32);
+    doc.text(`Date: ${new Date(event.date).toLocaleDateString()}`, 14, 38);
+    doc.text(`Total RSVPs: ${event.attendees.length}`, 14, 44);
+
+    const tableColumn = ["#", "Name", "Email Address"];
+    const tableRows = [];
+
+    event.attendees.forEach((att, index) => {
+      const attendeeData = [index + 1, att.name || "N/A", att.email || "N/A"];
+      tableRows.push(attendeeData);
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 50,
+      theme: "grid",
+      headStyles: { fillColor: [121, 67, 160] },
+      styles: { fontSize: 10 },
+    });
+
+    doc.save(`${event.title.replace(/\s+/g, "_")}_Attendees.pdf`);
+    showDialogAlert(
+      "Export Successful",
+      "The PDF file has been downloaded to your device.",
+      false,
+    );
   };
 
   if (loading) {
@@ -155,12 +289,18 @@ const EventDetails = () => {
   );
   const isPastEvent = new Date(event.date) < new Date();
 
+  const filteredAttendees =
+    event.attendees?.filter(
+      (att) =>
+        (att.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (att.email || "").toLowerCase().includes(searchQuery.toLowerCase()),
+    ) || [];
+
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark font-sans transition-colors duration-300">
       <DashboardNavbar />
 
       <main className="max-w-[1440px] mx-auto px-6 py-8">
-        {/* Top Controls & Back Button */}
         <div className="flex justify-between items-center mb-8">
           <button
             onClick={() => navigate(`/clubs/${event.club?._id}`)}
@@ -174,7 +314,6 @@ const EventDetails = () => {
           </button>
         </div>
 
-        {/* Clean Hero Title Area */}
         <section className="mb-12">
           {isPastEvent ? (
             <span className="bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4 inline-block">
@@ -202,7 +341,6 @@ const EventDetails = () => {
               </span>
             </div>
 
-            {/* Live Countdown Timer */}
             {!isPastEvent && (
               <div className="bg-primary/5 dark:bg-primary/10 px-4 py-2 rounded-xl flex gap-4 items-center border border-primary/20 text-primary shadow-sm">
                 <div className="text-center">
@@ -236,11 +374,8 @@ const EventDetails = () => {
           </div>
         </section>
 
-        {/* Main Layout Grid (70/30) */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 lg:gap-12">
-          {/* Left Column: Content */}
           <div className="space-y-12">
-            {/* Key Details Bento Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-card-light dark:bg-card-dark p-5 rounded-2xl flex flex-col justify-between shadow-sm border border-border-light dark:border-border-dark">
                 <Clock className="text-primary mb-4" size={24} />
@@ -287,7 +422,6 @@ const EventDetails = () => {
               </div>
             </div>
 
-            {/* About Section */}
             <section>
               <h2 className="text-2xl font-extrabold tracking-tight mb-6">
                 About the Event
@@ -299,7 +433,6 @@ const EventDetails = () => {
               </div>
             </section>
 
-            {/* Announcements Feed */}
             <section>
               <div className="flex justify-between items-end mb-6">
                 <h2 className="text-2xl font-extrabold tracking-tight">
@@ -310,7 +443,6 @@ const EventDetails = () => {
                 </span>
               </div>
 
-              {/* Admin Post Card */}
               {isAdmin && !isPastEvent && (
                 <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 p-6 rounded-3xl mb-6 shadow-sm">
                   <div className="flex items-start gap-4">
@@ -343,17 +475,14 @@ const EventDetails = () => {
                 </div>
               )}
 
-              {/* Empty Announcements */}
               <div className="bg-card-light dark:bg-card-dark p-8 rounded-3xl shadow-sm border border-border-light dark:border-border-dark text-center text-muted-light dark:text-muted-dark">
                 No announcements for this event yet.
               </div>
             </section>
           </div>
 
-          {/* Right Column: Sidebar */}
           <div className="relative">
             <div className="sticky top-24 space-y-8">
-              {/* RSVP Card */}
               <div className="bg-card-light dark:bg-card-dark p-8 rounded-3xl shadow-xl border border-border-light dark:border-border-dark space-y-8 relative z-20">
                 <div>
                   <div className="flex justify-between items-center mb-2">
@@ -397,7 +526,6 @@ const EventDetails = () => {
                   </p>
                   <div className="flex items-center">
                     <div className="flex -space-x-3 overflow-hidden">
-                      {/* Map real attendees */}
                       {event.attendees?.slice(0, 3).map((att, idx) => (
                         <div
                           key={att._id || idx}
@@ -435,7 +563,6 @@ const EventDetails = () => {
                 </div>
               </div>
 
-              {/* Admin Panel */}
               {isAdmin && (
                 <div className="bg-amber-50/50 dark:bg-amber-900/10 p-6 rounded-3xl border border-amber-200 dark:border-amber-900/30 relative z-10">
                   <div className="flex items-center gap-3 mb-6 text-amber-700 dark:text-amber-500">
@@ -443,7 +570,6 @@ const EventDetails = () => {
                     <h3 className="font-extrabold text-lg">Admin Console</h3>
                   </div>
 
-                  {/* RSVP Stats */}
                   <div className="mb-8">
                     <div className="flex justify-between items-center text-xs font-bold mb-2">
                       <span className="uppercase tracking-widest text-muted-light dark:text-muted-dark">
@@ -455,9 +581,11 @@ const EventDetails = () => {
                     </div>
                   </div>
 
-                  {/* Quick Actions */}
                   <div className="grid grid-cols-2 gap-3 mb-8">
-                    <button className="bg-white dark:bg-gray-800 p-3 rounded-2xl flex flex-col items-center gap-2 hover:bg-amber-100 dark:hover:bg-gray-700 transition-colors shadow-sm border border-amber-100 dark:border-gray-700">
+                    <button
+                      onClick={exportToCSV}
+                      className="bg-white dark:bg-gray-800 p-3 rounded-2xl flex flex-col items-center gap-2 hover:bg-amber-100 dark:hover:bg-gray-700 transition-colors shadow-sm border border-amber-100 dark:border-gray-700"
+                    >
                       <Download
                         className="text-amber-600 dark:text-amber-500"
                         size={20}
@@ -466,8 +594,10 @@ const EventDetails = () => {
                         Export CSV
                       </span>
                     </button>
-                    {/* NEW PDF EXPORT BUTTON */}
-                    <button className="bg-white dark:bg-gray-800 p-3 rounded-2xl flex flex-col items-center gap-2 hover:bg-amber-100 dark:hover:bg-gray-700 transition-colors shadow-sm border border-amber-100 dark:border-gray-700">
+                    <button
+                      onClick={exportToPDF}
+                      className="bg-white dark:bg-gray-800 p-3 rounded-2xl flex flex-col items-center gap-2 hover:bg-amber-100 dark:hover:bg-gray-700 transition-colors shadow-sm border border-amber-100 dark:border-gray-700"
+                    >
                       <FileText
                         className="text-amber-600 dark:text-amber-500"
                         size={20}
@@ -478,15 +608,36 @@ const EventDetails = () => {
                     </button>
                   </div>
 
-                  {/* Attendee Check-in list */}
                   <div className="space-y-3">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-light dark:text-gray-400 mb-4">
-                      Live Check-in
-                    </p>
+                    {/* --- TOTAL PRESENT BADGE ADDED HERE --- */}
+                    <div className="flex justify-between items-center mb-4">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-light dark:text-gray-400">
+                        Live Check-in
+                      </p>
+                      <span className="text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-500 px-2 py-0.5 rounded-md shadow-sm">
+                        {checkedInIds.length} Present
+                      </span>
+                    </div>
+
+                    <div className="relative mb-3">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search
+                          className="text-muted-light dark:text-gray-400"
+                          size={16}
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search attendees..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-white dark:bg-gray-800 border border-amber-200 dark:border-gray-700 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-foreground-light dark:text-foreground-dark placeholder-muted-light dark:placeholder-gray-500 transition-all"
+                      />
+                    </div>
 
                     <div className="max-h-64 overflow-y-auto pr-1 custom-scrollbar space-y-2">
-                      {event.attendees?.length > 0 ? (
-                        event.attendees.map((att) => (
+                      {filteredAttendees.length > 0 ? (
+                        filteredAttendees.map((att) => (
                           <div
                             key={att._id}
                             className="flex items-center justify-between p-2.5 rounded-2xl bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-colors border border-transparent hover:border-amber-200 dark:hover:border-gray-600 group"
@@ -512,16 +663,24 @@ const EventDetails = () => {
                                 </p>
                               </div>
                             </div>
-                            {/* Toggle Switch Placeholder */}
+
+                            {/* --- TOGGLE LOGIC ATTACHED HERE --- */}
                             <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                              <input type="checkbox" className="sr-only peer" />
+                              <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={checkedInIds.includes(att._id)}
+                                onChange={() => toggleCheckIn(att._id)}
+                              />
                               <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
                             </label>
                           </div>
                         ))
                       ) : (
                         <div className="text-center text-sm text-muted-light py-4">
-                          No attendees yet
+                          {searchQuery
+                            ? "No attendees found"
+                            : "No attendees yet"}
                         </div>
                       )}
                     </div>
@@ -532,6 +691,18 @@ const EventDetails = () => {
           </div>
         </div>
       </main>
+
+      <ConfirmDialog
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={modalConfig.action}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        isDanger={modalConfig.isDanger}
+        isLoading={actionLoading}
+      />
     </div>
   );
 };
