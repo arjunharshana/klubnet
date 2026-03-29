@@ -12,6 +12,7 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard.jsx";
 import SuperAdminRoute from "./components/SuperAdminRoute.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
+import EventDetails from "./pages/EventDetails.jsx";
 
 function NotFound() {
   return (
@@ -39,6 +40,7 @@ function App() {
         <Route path="/explore" element={<Explore />} />
         <Route path="/create-club" element={<CreateClub />} />
         <Route path="/clubs/:id" element={<ClubDetails />} />
+        <Route path="/events/:id" element={<EventDetails />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />

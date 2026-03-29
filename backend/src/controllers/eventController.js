@@ -136,6 +136,20 @@ const getUserEvents = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, count: events.length, data: events });
 });
 
+const getEventById = asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.eventId)
+    .populate("club", "name image admins") 
+    .populate("attendees", "name email image");
+
+  if (!event) {
+    res.status(404);
+    throw new Error("Event not found");
+  }
+
+  res.status(200).json({ success: true, data: event });
+});
+
+
 module.exports = {
   createEvent,
   getClubEvents,
@@ -144,4 +158,5 @@ module.exports = {
   joinEvent,
   updateEvent,
   getUserEvents,
+  getEventById,
 };

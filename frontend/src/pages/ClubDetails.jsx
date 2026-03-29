@@ -532,7 +532,6 @@ const ClubDetails = () => {
                   {club.description}
                 </div>
               </section>
-
               {/* Gallery Section */}
               <section>
                 <div className="flex items-center justify-between mb-4 px-1">
@@ -575,7 +574,6 @@ const ClubDetails = () => {
                   </div>
                 </div>
               </section>
-
               {/* Upcoming Events Section */}
               <section className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/50 dark:border-gray-700 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
@@ -600,6 +598,7 @@ const ClubDetails = () => {
                     upcomingEvents.map((event) => (
                       <div
                         key={event._id}
+                        onClick={() => navigate(`/events/${event._id}`)}
                         className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl hover:bg-white/40 dark:hover:bg-gray-700/50 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-all cursor-pointer group"
                       >
                         <div className="flex-shrink-0 w-full sm:w-24 h-24 sm:h-24 rounded-lg bg-primary/10 dark:bg-primary/20 flex flex-col items-center justify-center text-primary border border-primary/20">
@@ -685,8 +684,7 @@ const ClubDetails = () => {
                   )}
                 </div>
               </section>
-
-              {/* --- NEW: PAST EVENTS SECTION --- */}
+              *
               {pastEvents.length > 0 && (
                 <section className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/50 dark:border-gray-700 shadow-sm mt-2">
                   <div className="flex items-center gap-3 mb-6">
@@ -700,6 +698,7 @@ const ClubDetails = () => {
                     {visiblePastEvents.map((event) => (
                       <div
                         key={event._id}
+                        onClick={() => navigate(`/events/${event._id}`)}
                         className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl border border-transparent transition-all group opacity-80 hover:opacity-100"
                       >
                         <div className="flex-shrink-0 w-full sm:w-24 h-24 sm:h-24 rounded-lg bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
