@@ -9,6 +9,7 @@ const {
   updateEvent,
   getUserEvents,
   getEventById,
+  postAnnouncement,
 } = require("../controllers/eventController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 
@@ -19,6 +20,7 @@ router.get("/:eventId", getEventById);
 router.get("/myevents", authMiddleware, getUserEvents);
 
 router.post("/", authMiddleware, createEvent);
+router.post("/:eventId/announcement", authMiddleware, postAnnouncement);
 
 router.delete("/:eventId", authMiddleware, deleteEvent);
 

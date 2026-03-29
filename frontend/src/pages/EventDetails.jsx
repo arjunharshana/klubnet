@@ -40,8 +40,6 @@ const EventDetails = () => {
   const [announcementText, setAnnouncementText] = useState("");
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
   const [searchQuery, setSearchQuery] = useState("");
-
-  // --- NEW: Track Check-ins locally ---
   const [checkedInIds, setCheckedInIds] = useState([]);
 
   const [modalConfig, setModalConfig] = useState({
@@ -168,7 +166,40 @@ const EventDetails = () => {
     }
   };
 
-  // --- Toggle Check-in Function ---
+  const handlePostAnnouncement = async () => {
+    if (!announcementText.trim()) {
+      return showDialogAlert(
+        "Empty Field",
+        "Please enter an announcement message before posting.",
+        true,
+      );
+    }
+
+    setActionLoading(true);
+    try {
+      const API_URL =
+        import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URI;
+      await axios.post(
+        `${API_URL}/api/events/${eventId}/announcements`,
+        { text: announcementText },
+        { withCredentials: true },
+      );
+
+      setAnnouncementText("");
+      fetchEventData();
+      showDialogAlert("Success", "Your announcement has been posted.", false);
+    } catch (error) {
+      console.error("Error posting announcement:", error);
+      showDialogAlert(
+        "Action Failed",
+        error.response?.data?.message || "Failed to post announcement.",
+        true,
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const toggleCheckIn = (attendeeId) => {
     setCheckedInIds((prev) =>
       prev.includes(attendeeId)
@@ -439,15 +470,23 @@ const EventDetails = () => {
                   Announcements
                 </h2>
                 <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full">
-                  0 Updates
+                  {event.announcements?.length || 0} Updates
                 </span>
               </div>
 
               {isAdmin && !isPastEvent && (
                 <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 p-6 rounded-3xl mb-6 shadow-sm">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shrink-0 shadow-md">
-                      <Edit size={18} />
+                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shrink-0 shadow-md overflow-hidden">
+                      {user?.image ? (
+                        <img
+                          src={user.image}
+                          alt="You"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Edit size={18} />
+                      )}
                     </div>
                     <div className="flex-grow">
                       <textarea
@@ -456,6 +495,7 @@ const EventDetails = () => {
                         className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder-muted-light resize-none"
                         placeholder="Post an update for attendees..."
                         rows="2"
+                        disabled={actionLoading}
                       ></textarea>
                       <div className="flex justify-between items-center mt-3">
                         <div className="flex gap-1">
@@ -466,8 +506,12 @@ const EventDetails = () => {
                             <Paperclip size={18} />
                           </button>
                         </div>
-                        <button className="bg-primary text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-primary-hover transition-all active:scale-95">
-                          Post Update
+                        <button
+                          onClick={handlePostAnnouncement}
+                          disabled={actionLoading}
+                          className="bg-primary text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-primary-hover transition-all active:scale-95 disabled:opacity-70"
+                        >
+                          {actionLoading ? "Posting..." : "Post Update"}
                         </button>
                       </div>
                     </div>
@@ -475,8 +519,55 @@ const EventDetails = () => {
                 </div>
               )}
 
-              <div className="bg-card-light dark:bg-card-dark p-8 rounded-3xl shadow-sm border border-border-light dark:border-border-dark text-center text-muted-light dark:text-muted-dark">
-                No announcements for this event yet.
+              {/* Dynamic Announcements List */}
+              <div className="space-y-4">
+                {event.announcements?.length > 0 ? (
+                  // Map in reverse to show newest first
+                  [...event.announcements].reverse().map((ann, index) => (
+                    <div
+                      key={ann._id || index}
+                      className="bg-card-light dark:bg-card-dark p-6 rounded-3xl shadow-sm border border-border-light dark:border-border-dark"
+                    >
+                      <div className="flex gap-4">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center text-white font-bold shrink-0 overflow-hidden">
+                          {ann.postedBy?.image ? (
+                            <img
+                              src={ann.postedBy.image}
+                              alt={ann.postedBy.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            ann.postedBy?.name?.charAt(0) || "A"
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-bold">
+                              {ann.postedBy?.name || "Admin"}
+                            </h4>
+                            <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-md font-bold tracking-wide">
+                              ADMIN
+                            </span>
+                            <span className="text-xs text-muted-light dark:text-muted-dark font-medium">
+                              •{" "}
+                              {new Date(ann.date).toLocaleString([], {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-muted-light dark:text-muted-dark leading-relaxed text-sm whitespace-pre-line">
+                            {ann.text}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-card-light dark:bg-card-dark p-8 rounded-3xl shadow-sm border border-border-light dark:border-border-dark text-center text-muted-light dark:text-muted-dark">
+                    No announcements for this event yet.
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -609,7 +700,6 @@ const EventDetails = () => {
                   </div>
 
                   <div className="space-y-3">
-                    {/* --- TOTAL PRESENT BADGE ADDED HERE --- */}
                     <div className="flex justify-between items-center mb-4">
                       <p className="text-xs font-bold uppercase tracking-widest text-muted-light dark:text-gray-400">
                         Live Check-in
@@ -664,7 +754,6 @@ const EventDetails = () => {
                               </div>
                             </div>
 
-                            {/* --- TOGGLE LOGIC ATTACHED HERE --- */}
                             <label className="relative inline-flex items-center cursor-pointer shrink-0">
                               <input
                                 type="checkbox"

@@ -138,8 +138,9 @@ const getUserEvents = asyncHandler(async (req, res) => {
 
 const getEventById = asyncHandler(async (req, res) => {
   const event = await Event.findById(req.params.eventId)
-    .populate("club", "name image admins") 
-    .populate("attendees", "name email image");
+    .populate("club", "name image admins")
+    .populate("attendees", "name email image")
+    .populate("announcements.postedBy", "name image");
 
   if (!event) {
     res.status(404);
@@ -149,6 +150,37 @@ const getEventById = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: event });
 });
 
+const postAnnouncement = asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.eventId);
+  if (!event) {
+    res.status(404);
+    throw new Error("Event not found");
+  }
+
+  const club = await Club.findById(event.club);
+  const isClubAdmin =
+    club.admins.some(
+      (adminId) => adminId.toString() === req.user._id.toString(),
+    ) || req.user.roles?.includes("superadmin");
+
+  if (!isClubAdmin) {
+    res.status(403);
+    throw new Error("Only club admins can post announcements");
+  }
+
+  if (!req.body.text) {
+    res.status(400);
+    throw new Error("Announcement text is required");
+  }
+
+  event.announcements.push({
+    text: req.body.text,
+    postedBy: req.user._id,
+  });
+
+  await event.save();
+  res.status(201).json({ success: true, message: "Announcement posted" });
+});
 
 module.exports = {
   createEvent,
@@ -159,4 +191,5 @@ module.exports = {
   updateEvent,
   getUserEvents,
   getEventById,
+  postAnnouncement,
 };

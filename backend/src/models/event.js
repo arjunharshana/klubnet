@@ -37,6 +37,13 @@ const eventSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    announcements: [
+      {
+        text: { type: String, required: true },
+        postedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        date: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true },
 );
