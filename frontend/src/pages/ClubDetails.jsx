@@ -27,6 +27,7 @@ import {
   UserMinus,
   Crown,
   ShieldOff,
+  History,
 } from "lucide-react";
 import CreateEvent from "../components/CreateEvent";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -45,6 +46,7 @@ const ClubDetails = () => {
   const [events, setEvents] = useState([]);
   const [editingEvent, setEditingEvent] = useState(null);
   const [showEditClub, setShowEditClub] = useState(false);
+  const [showAllPastEvents, setShowAllPastEvents] = useState(false);
 
   const [listModalType, setListModalType] = useState(null);
 
@@ -315,6 +317,7 @@ const ClubDetails = () => {
       },
     });
   };
+
   const refreshEvents = async () => {
     try {
       const API_URL =
@@ -411,7 +414,7 @@ const ClubDetails = () => {
   };
 
   const hasJoinedEvent = (event) => {
-    return event.attendees.some((att) => (att._id || att) === user?._id);
+    return event.attendees?.some((att) => (att._id || att) === user?._id);
   };
 
   if (loading)
@@ -435,6 +438,23 @@ const ClubDetails = () => {
 
   const currentList =
     listModalType === "members" ? combinedMembersList : club.followers;
+
+  // --- FILTER EVENTS INTO UPCOMING AND PAST ---
+  const now = new Date();
+
+  // Sort upcoming ascending (closest first)
+  const upcomingEvents = events
+    .filter((e) => new Date(e.date) >= now)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // Sort past descending (most recently finished first)
+  const pastEvents = events
+    .filter((e) => new Date(e.date) < now)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const visiblePastEvents = showAllPastEvents
+    ? pastEvents
+    : pastEvents.slice(0, 3);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-white transition-colors duration-300 overflow-x-hidden">
@@ -556,7 +576,7 @@ const ClubDetails = () => {
                 </div>
               </section>
 
-              {/* Events Section */}
+              {/* Upcoming Events Section */}
               <section className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/50 dark:border-gray-700 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -576,8 +596,8 @@ const ClubDetails = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {events.length > 0 ? (
-                    events.map((event) => (
+                  {upcomingEvents.length > 0 ? (
+                    upcomingEvents.map((event) => (
                       <div
                         key={event._id}
                         className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl hover:bg-white/40 dark:hover:bg-gray-700/50 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-all cursor-pointer group"
@@ -641,7 +661,11 @@ const ClubDetails = () => {
                               e.stopPropagation();
                               handleRSVP(event._id);
                             }}
-                            className={`px-4 py-2 rounded-lg border text-sm font-bold transition-all shadow-sm ${hasJoinedEvent(event) ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:bg-primary/5 hover:text-primary hover:border-primary/30"}`}
+                            className={`px-4 py-2 rounded-lg border text-sm font-bold transition-all shadow-sm ${
+                              hasJoinedEvent(event)
+                                ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200"
+                                : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:bg-primary/5 hover:text-primary hover:border-primary/30"
+                            }`}
                           >
                             {hasJoinedEvent(event) ? (
                               <span className="flex items-center gap-1">
@@ -661,6 +685,101 @@ const ClubDetails = () => {
                   )}
                 </div>
               </section>
+
+              {/* --- NEW: PAST EVENTS SECTION --- */}
+              {pastEvents.length > 0 && (
+                <section className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/50 dark:border-gray-700 shadow-sm mt-2">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                      <History size={20} />
+                    </div>
+                    <h3 className="text-xl font-bold">Past Events</h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    {visiblePastEvents.map((event) => (
+                      <div
+                        key={event._id}
+                        className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl border border-transparent transition-all group opacity-80 hover:opacity-100"
+                      >
+                        <div className="flex-shrink-0 w-full sm:w-24 h-24 sm:h-24 rounded-lg bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                          <span className="text-xs font-bold uppercase tracking-wider">
+                            {new Date(event.date).toLocaleString("default", {
+                              month: "short",
+                            })}
+                          </span>
+                          <span className="text-2xl font-bold">
+                            {new Date(event.date).getDate()}
+                          </span>
+                        </div>
+                        <div className="flex-1 flex flex-col justify-center">
+                          <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                            {event.title}
+                          </h4>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditEvent(event);
+                                }}
+                                className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteEventClick(event._id);
+                                }}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          )}
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">
+                            <span className="flex items-center gap-1">
+                              <Clock size={14} />{" "}
+                              {new Date(event.date).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            <span className="hidden sm:inline">•</span>
+                            <span className="flex items-center gap-1">
+                              <MapPin size={14} /> {event.location}
+                            </span>
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
+                            {event.description}
+                          </p>
+                        </div>
+                        <div className="flex items-center sm:justify-end">
+                          <button
+                            disabled
+                            className="px-4 py-2 rounded-lg border text-sm font-bold shadow-sm bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700 cursor-not-allowed"
+                          >
+                            Completed
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Show More / Show Less Button */}
+                    {pastEvents.length > 3 && (
+                      <button
+                        onClick={() => setShowAllPastEvents(!showAllPastEvents)}
+                        className="w-full py-3 mt-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        {showAllPastEvents
+                          ? "Show Less"
+                          : `Show All Past Events (${pastEvents.length})`}
+                      </button>
+                    )}
+                  </div>
+                </section>
+              )}
             </div>
 
             {/* Right Column (Sidebar) */}
@@ -883,7 +1002,7 @@ const ClubDetails = () => {
         </div>
       </main>
 
-      {/*  */}
+      {/* --- MEMBERS / FOLLOWERS MODAL --- */}
       {listModalType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -942,7 +1061,7 @@ const ClubDetails = () => {
                       </div>
                     </div>
 
-                    {/* ADMIN CONTROLS */}
+                    {/* ONLY ADMIN CAN SEE THESE CONTROLS - CANNOT DEMOTE/REMOVE THEMSELVES */}
                     {isAdmin &&
                       listModalType === "members" &&
                       u._id !== user._id && (
@@ -1003,10 +1122,18 @@ const ClubDetails = () => {
       />
 
       <div
-        className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 ease-out transform ${toast.show ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0 pointer-events-none"}`}
+        className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 ease-out transform ${
+          toast.show
+            ? "translate-y-0 opacity-100"
+            : "translate-y-8 opacity-0 pointer-events-none"
+        }`}
       >
         <div
-          className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-md ${toast.type === "error" ? "bg-red-50/90 dark:bg-red-900/80 border-red-200 dark:border-red-800 text-red-700 dark:text-red-200" : "bg-green-50/90 dark:bg-green-900/80 border-green-200 dark:border-green-800 text-green-700 dark:text-green-200"}`}
+          className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-md ${
+            toast.type === "error"
+              ? "bg-red-50/90 dark:bg-red-900/80 border-red-200 dark:border-red-800 text-red-700 dark:text-red-200"
+              : "bg-green-50/90 dark:bg-green-900/80 border-green-200 dark:border-green-800 text-green-700 dark:text-green-200"
+          }`}
         >
           {toast.type === "error" ? (
             <AlertCircle size={20} className="shrink-0" />

@@ -18,12 +18,6 @@ const createEvent = asyncHandler(async (req, res) => {
     throw new Error("Club not found");
   }
 
-  //checking for admin role
-  if (club.admin.toString() !== req.user._id.toString()) {
-    res.status(403);
-    throw new Error("Only club admins can create events");
-  }
-
   const event = new Event({
     title,
     description,
@@ -62,7 +56,13 @@ const deleteEvent = asyncHandler(async (req, res) => {
 
   //checking for admin role
   const club = await Club.findById(event.club);
-  if (club.admin.toString() !== req.user._id.toString()) {
+
+  const isClubAdmin =
+    club.admins.some(
+      (adminId) => adminId.toString() === req.user._id.toString(),
+    ) || req.user.roles?.includes("superadmin");
+
+  if (!isClubAdmin) {
     res.status(403);
     throw new Error("Only club admins can delete events");
   }
@@ -77,7 +77,12 @@ const joinEvent = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Event not found");
   }
-  if (event.attendees.includes(req.user._id)) {
+
+  const isAlreadyJoined = event.attendees.some(
+    (id) => id.toString() === req.user._id.toString(),
+  );
+
+  if (isAlreadyJoined) {
     event.attendees = event.attendees.filter(
       (id) => id.toString() !== req.user._id.toString(),
     );
@@ -98,9 +103,16 @@ const updateEvent = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Event not found");
   }
+
   //checking for admin role
   const club = await Club.findById(event.club);
-  if (club.admin.toString() !== req.user._id.toString()) {
+
+  const isClubAdmin =
+    club.admins.some(
+      (adminId) => adminId.toString() === req.user._id.toString(),
+    ) || req.user.roles?.includes("superadmin");
+
+  if (!isClubAdmin) {
     res.status(403);
     throw new Error("Only club admins can update events");
   }
@@ -115,7 +127,7 @@ const updateEvent = asyncHandler(async (req, res) => {
 
 const getUserEvents = asyncHandler(async (req, res) => {
   const events = await Event.find({
-    attendees: req.user.id,
+    attendees: req.user._id,
     date: { $gte: new Date() },
   })
     .populate("club", "name image")
